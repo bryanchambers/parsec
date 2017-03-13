@@ -1,8 +1,11 @@
-def findTable(soup, element, title):
-	mark_list = soup.findAll(element)
-	for i in range(0, len(mark_list) - 1):
-		if "consolidated balance sheets" in mark_list[i].text.lower():
-			units = mark_list[i].findNext(element).text.lower()
-			if "thousands" in units or "millions" in units:
-				mark = mark_list[i]
-	return mark
+def findTable(re, soup):
+	tables = soup.findAll("table")
+
+	output = []
+	i = 0
+	while i < len(tables) and i < 10:
+		count = len(tables[i].findAll(text=re.compile("assets"))) + len(tables[i].findAll(text=re.compile("liabilities")))
+		if count > 4:
+			output.append({"table": tables[i], "order": i})
+		i += 1
+	return output

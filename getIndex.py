@@ -1,63 +1,26 @@
-import requests
+def getIndex(requests, year, qtr):
+	base_url = "https://www.sec.gov/Archives/edgar/full-index/"
+	full_url = base_url + year + "/QTR" + qtr + "/form.idx"
+	
+	data  = requests.get(full_url).content
+	lines = data.split('\n')
 
+	index = []
+	for i in range(len(lines)):
+		items = lines[i].split()
+		if len(items) > 0 and items[0] == "10-Q":
+			last = len(items) - 1
 
+			company = ""
+			for n in range(1, last - 3):
+				company += " " + items[n]
+			company = company[1:]
 
-def findReport(words, report):
-	if len(words) > 0:
-		if words[0] == "10-" + report.upper():
-			return True
-		else:
-			return False
+			cik      = items[last - 2]
+			date     = items[last - 1]
+			filename = items[last]
+			
+			row = {"company": company, "cik": cik, "date": date, "filename": filename}
+			index.append(row)
 
-
-def findCompany(words, company):
-	flag = False
-	for i in range(0, len(words) - 1):
-		if company in words[i]:
-			print words[i]
-			flag = True
-	return flag
-
-
-def printFilename(words):
-	filename = words[len(words) - 1]
-	if ".txt" in filename:
-		print filename
-		return filename
-
-
-def findFile(lines):
-	company = raw_input("Company: ")
-	report  = raw_input("Report: ")
-
-	if company != "x" and report != "x":
-		for i in range(0, len(lines) - 1):
-			words = lines[i].split()
-			if findReport(words, report) == True:
-				if findCompany(words, company) == True:
-					return printFilename(words)
-	else:
-		return False
-
-
-
-
-print ""
-print "Search SEC Index"
-print "****************"
-print ""
-
-base_url = "https://www.sec.gov/Archives/edgar/full-index/"
-year     = raw_input("Year: ")
-qtr      = raw_input("Quarter: ")
-full_url = base_url + year + "/QTR" + qtr + "/form.idx"
-
-print ""
-print "Downloading index..."
-index = requests.get(full_url).content
-lines = index.split('\n')
-print "IDX " + year + " Q" + qtr + " downloaded"
-print ""
-
-filename = findFile(lines)
-print "https://www.sec.gov/Archives/" + filename
+	return index

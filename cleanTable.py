@@ -1,6 +1,6 @@
-def getTable(mark, string):
+def cleanTable(table, string):
 	rows = []
-	lines = mark.findNext("table").findAll("tr")
+	lines = table.findAll("tr")
 	for i in range(0, len(lines) - 1):
 		row = []
 		items = lines[i].findAll("td")
