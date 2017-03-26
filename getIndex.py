@@ -1,4 +1,6 @@
-def getIndex(requests, year, qtr):
+import requests
+
+def getIndex(year, qtr):
 	base_url = "https://www.sec.gov/Archives/edgar/full-index/"
 	full_url = base_url + year + "/QTR" + qtr + "/form.idx"
 	
@@ -14,7 +16,7 @@ def getIndex(requests, year, qtr):
 			company = ""
 			for n in range(1, last - 3):
 				company += " " + items[n]
-			company = company[1:]
+			company = company[1:].lower()
 
 			cik      = items[last - 2]
 			date     = items[last - 1]
@@ -22,5 +24,4 @@ def getIndex(requests, year, qtr):
 			
 			row = {"company": company, "cik": cik, "date": date, "filename": filename}
 			index.append(row)
-
 	return index
