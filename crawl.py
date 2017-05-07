@@ -16,6 +16,8 @@ print ""
 count_good  = 0
 count_total = 0
 
+start = datetime.datetime.now()
+
 for year in range(2016, 1994, -1):
 	for qtr in range(4, 0, -1):
 		print 'Downloading index for ' + str(year) + ' Q' + str(qtr)
@@ -35,7 +37,6 @@ for year in range(2016, 1994, -1):
 
 			chk_report = db.reportExists(dbc, cursor, filename)
 			if not chk_report['exists'] and chk_report['success']:
-				print datetime.datetime.now().strftime("%d %b %I:%M:%S%p")
 				output = parsec.parsec(filename)
 				if output['success']:
 					data = db.prepData(report, output)
@@ -44,8 +45,15 @@ for year in range(2016, 1994, -1):
 					count_good += 1
 				else:
 					db.addReportFail(dbc, cursor, report)
+				
 				count_total += 1
 				success_rate = int((float(count_good) / count_total) * 100)
-				print datetime.datetime.now().strftime("%d %b %I:%M:%S%p")
 				print 'Success rate ' + str(count_good) + '/' + str(count_total) + ' ' + str(success_rate) + '%'
+				
+				finish = datetime.datetime.now()
+				print finish.strftime("%d %b %I:%M:%S%p")
+
+				elapsed = finish - start
+				runtime = elapsed.total_seconds() / count_total
+				print 'Avg runtime ' + str(round(runtime, 1)) + 's'
 			else: print 'Already there'
