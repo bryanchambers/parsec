@@ -9,6 +9,37 @@ import datetime
 
 
 
+def getIndex(year, qtr):
+	base_url = "https://www.sec.gov/Archives/edgar/full-index/"
+	full_url = base_url + str(year) + "/QTR" + str(qtr) + "/form.idx"
+	
+	data  = requests.get(full_url).content
+	lines = data.split('\n')
+
+	index = []
+	for i in range(len(lines)):
+		items = lines[i].split()
+		if len(items) > 0 and items[0] == "10-Q":
+			last = len(items) - 1
+
+			company = ""
+			for n in range(1, last - 3):
+				company += " " + items[n]
+			company = company[1:].lower()
+			if company.endswith(','): company = company[:-1]
+
+			cik      = items[last - 2]
+			date     = items[last - 1]
+			filename = items[last]
+			
+			row = {"company": company, "cik": cik, "date": date, "filename": filename}
+			index.append(row)
+	return index
+
+
+
+
+
 def cleanText(dirty):
 	if isinstance(dirty, basestring):
 		clean = dirty.strip(string.whitespace).strip(u'\xa0').encode('ascii', 'ignore').replace("'", "").lower()
@@ -62,9 +93,9 @@ def findUnits(page):
 	cnt_thou = len(re.findall('thousands', page, re.IGNORECASE))
 	cnt_mill = len(re.findall('millions', page, re.IGNORECASE))
 
-	if   compareValues(cnt_thou, cnt_mill, 3, 3): return 1000
-	elif compareValues(cnt_mill, cnt_thou, 3, 3): return 1000000
-	elif (cnt_thou + cnt_mill) <= 3:       return 1
+	if   compareValues(cnt_thou, cnt_mill, 3, 3): return 1
+	elif compareValues(cnt_mill, cnt_thou, 3, 3): return 1000
+	elif (cnt_thou + cnt_mill) <= 3:       return 0.001
 	else: return False
 
 
@@ -169,7 +200,7 @@ def parseRow(row, data, units, date_order):
 				if len(values) == 2 or len(values) == 4:
 					if   date_order == 'std': output = values[0::2]
 					elif date_order == 'rev': output = values[1::2]
-					else: output = False
+					else: output = values[0::2]
 
 					if output:
 						if len(output) == 1: output = output[0]
@@ -266,23 +297,42 @@ def parsec(filename):
 	errors  = []
 	output  = []
 
-	base_url = "https://www.sec.gov/Archives/"
-	page     = requests.get(base_url + filename).content
-	soup     = bs4.BeautifulSoup(page, "lxml")
+	base_url = 'https://www.sec.gov/Archives/'
+	
+	page = requests.get(base_url + filename).content
+	print 'Downloaded'
+	
+	soup = bs4.BeautifulSoup(page, "lxml")
+	print 'Soupy'
 
 	units = findUnits(page)
 	if units:
+		print 'Units ' + str(int(units * 1000))
+		
 		rows = getRows(page, soup)
+		try: print str(len(rows)) + ' Rows'
+		except TypeError: print 'Blank?'
+		
 		date_order = setDateOrder(rows)
 		if date_order:
+			if date_order == 'std': print 'Standard dates'
+			else: print 'Reverse dates' 
+
+			print 'Parsing'
 			data = parseReport(rows, units, date_order)
 			if data['success']:
+				print 'Parse complete'
 				success = True
 				output  = data['output'] 
 			else: 
 				errors.append('Report parse failure')
 				errors.append(data['errors'])
-		else: errors.append('Date order not found') 
-	else: errors.append('Units not found')
+				print 'Parse failure'
+		else: 
+			errors.append('Date order not found') 
+			print 'Date order not found'
+	else: 
+		errors.append('Units not found')
+		print 'Units not found'
 
-	return {'*success': success, 'output': output, 'errors': errors}
+	return {'success': success, 'output': output, 'errors': errors}
