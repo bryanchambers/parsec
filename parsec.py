@@ -168,7 +168,7 @@ def setDateOrder(rows):
 
 	if   compareValues(cnt_std, cnt_rev, 2, 5): return 'std'
 	elif compareValues(cnt_rev, cnt_std, 2, 5): return 'rev'
-	else: return False
+	else: return 'std'
 
 
 
@@ -200,7 +200,7 @@ def parseRow(row, data, units, date_order):
 				if len(values) == 2 or len(values) == 4:
 					if   date_order == 'std': output = values[0::2]
 					elif date_order == 'rev': output = values[1::2]
-					else: output = values[0::2]
+					else: output = False
 
 					if output:
 						if len(output) == 1: output = output[0]
@@ -250,9 +250,7 @@ def parseReportSection(data, rows, units, date_order):
 				for i in range(len(data)):
 					if data[i]['header'] == output['header']:
 							if data[i]['values'] == 0: data[i]['values'] = output['values']
-							#if valuesFilled(data): done = True
 			else: fails += 1
-			#if fails > 50: data = resetValues(data)
 	return data
 
 
