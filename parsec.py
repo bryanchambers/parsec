@@ -284,6 +284,7 @@ def parseReport(rows, units, date_order):
 			success = False
 			error   = {'*section': section['table'], 'missing': validate['missing']}
 			errors.append(error)
+			print 'Missing ' + validate['missing'][0]
 	return {'success': success, 'output': output, 'errors': errors}
 
 
@@ -297,40 +298,44 @@ def parsec(filename):
 
 	base_url = 'https://www.sec.gov/Archives/'
 	
-	page = requests.get(base_url + filename).content
-	print 'Downloaded'
-	
-	soup = bs4.BeautifulSoup(page, "lxml")
-	print 'Soupy'
+	page    = requests.get(base_url + filename).content
+	pg_tags = page.count('<')
+	print 'Downloaded ' + str(pg_tags)
+	if pg_tags < 500000:
+		soup = bs4.BeautifulSoup(page, "lxml")
+		print 'Soupy'
 
-	units = findUnits(page)
-	if units:
-		print 'Units ' + str(int(units * 1000))
-		
-		rows = getRows(page, soup)
-		try: print str(len(rows)) + ' Rows'
-		except TypeError: print 'Blank?'
-		
-		date_order = setDateOrder(rows)
-		if date_order:
-			if date_order == 'std': print 'Standard dates'
-			else: print 'Reverse dates' 
+		units = findUnits(page)
+		if units:
+			print 'Units ' + str(int(units * 1000))
+			
+			rows = getRows(page, soup)
+			try: print str(len(rows)) + ' Rows'
+			except TypeError: print 'Blank?'
+			
+			date_order = setDateOrder(rows)
+			if date_order:
+				if date_order == 'std': print 'Standard dates'
+				else: print 'Reverse dates' 
 
-			print 'Parsing'
-			data = parseReport(rows, units, date_order)
-			if data['success']:
-				print 'Parse complete'
-				success = True
-				output  = data['output'] 
+				print 'Parsing'
+				data = parseReport(rows, units, date_order)
+				if data['success']:
+					print 'Parse complete'
+					success = True
+					output  = data['output'] 
+				else: 
+					errors.append('Report parse failure')
+					errors.append(data['errors'])
+					print 'Parse failure'
 			else: 
-				errors.append('Report parse failure')
-				errors.append(data['errors'])
-				print 'Parse failure'
+				errors.append('Date order not found') 
+				print 'Date order not found'
 		else: 
-			errors.append('Date order not found') 
-			print 'Date order not found'
-	else: 
-		errors.append('Units not found')
-		print 'Units not found'
+			errors.append('Units not found')
+			print 'Units not found'
+	else:
+		errors.append('Report too long')
+		print 'Report too long'
 
 	return {'success': success, 'output': output, 'errors': errors}
