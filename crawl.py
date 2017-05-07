@@ -5,7 +5,8 @@ import parsec
 dbc    = db.dbConnect('localhost', 'root', 'atlas', 'parsec')
 cursor = db.getCursor(dbc)
 
-#db.createTable(cursor)
+db.createTable(cursor, 'reports')
+db.createTable(cursor, 'companies')
 
 print ""
 print "Parsec SEC Crawler"
@@ -28,8 +29,12 @@ for year in range(2016, 1994, -1):
 			print str(year) + ' Q' + str(qtr)
 			print filename
 			
-			check = db.reportExists(dbc, cursor, filename)
-			if not check['exists'] and check['success']:
+			chk_company = db.companyExists(dbc, cursor, report['cik'])
+			if not chk_company['exists'] and chk_company['success']:
+				db.addCompany(dbc, cursor, report)
+
+			chk_report = db.reportExists(dbc, cursor, filename)
+			if not chk_report['exists'] and chk_report['success']:
 				print datetime.datetime.now().strftime("%d %b %I:%M:%S%p")
 				output = parsec.parsec(filename)
 				if output['success']:
