@@ -8,52 +8,47 @@ cursor = db.getCursor(dbc)
 db.createTable(cursor, 'reports')
 db.createTable(cursor, 'companies')
 
-print ""
-print "Parsec SEC Crawler"
-print "******************"
-print ""
+print ''
+print ''
+print '********** PARSEC **********'
+print '****************************'
+print ''
 
-count_good  = 0
-count_total = 0
+valid = 0
+total = 0
 
-start = datetime.datetime.now()
+info = {}
+info['start'] = datetime.datetime.now()
+
+completed = db.countReports(dbc, cursor)
+print str(completed['count']) + ' Existing Reports'
+print ''
 
 for year in range(2016, 1994, -1):
 	for qtr in range(4, 0, -1):
-		print 'Downloading index for ' + str(year) + ' Q' + str(qtr)
 		index = parsec.getIndex(year, qtr)
-		print 'Index downloaded'
 		
 		for report in index:
-			filename = report['filename']
-			print ""
-			print report['company']
-			print str(year) + ' Q' + str(qtr)
-			print filename
+			info['cik']  = report['cik']
+			info['date'] = report['date']
 			
 			chk_company = db.companyExists(dbc, cursor, report['cik'])
 			if not chk_company['exists'] and chk_company['success']:
 				db.addCompany(dbc, cursor, report)
 
-			chk_report = db.reportExists(dbc, cursor, filename)
+			chk_report = db.reportExists(dbc, cursor, report['filename'])
 			if not chk_report['exists'] and chk_report['success']:
-				output = parsec.parsec(filename)
+				info['valid'] = valid;
+				info['total'] = total;
+				output = parsec.parsec(report['filename'], info)
+				
 				if output['success']:
 					data = db.prepData(report, output)
-					print 'Data prepped'
 					db.addReportSuccess(dbc, cursor, data)
-					count_good += 1
+					valid += 1
+					parsec.updateStatus(info, 'Success!')
 				else:
 					db.addReportFail(dbc, cursor, report)
+					parsec.updateStatus(info, 'Failed')
 				
-				count_total += 1
-				success_rate = int((float(count_good) / count_total) * 100)
-				print 'Success rate ' + str(count_good) + '/' + str(count_total) + ' ' + str(success_rate) + '%'
-				
-				finish = datetime.datetime.now()
-				print finish.strftime("%d %b %I:%M:%S%p")
-
-				elapsed = finish - start
-				runtime = elapsed.total_seconds() / count_total
-				print 'Avg runtime ' + str(round(runtime, 1)) + 's'
-			else: print 'Already there'
+				total += 1

@@ -1,0 +1,41 @@
+SELECT
+cik,
+release_date AS 'date',
+net_income AS 'ni',
+operating_income AS 'opi',
+gross_income AS 'gri',
+revenue AS 'rev',
+net_income_ext AS 'nix',
+operating_income_ext AS 'opix',
+gross_income_ext AS 'grix',
+revenue_ext AS 'revx',
+total_assets AS 'tass',
+total_liabilities AS 'tlib',
+current_assets AS 'cass',
+current_liabilities AS 'clib',
+operating_cash_flow AS 'oflow',
+investing_cash_flow AS 'iflow',
+financing_cash_flow AS 'fflow',
+starting_cash AS 'scash',
+ending_cash AS 'ecash'
+FROM reports WHERE success = 1;
+
+
+
+SELECT
+cik,
+release_date AS 'date',
+net_income AS 'ni',
+operating_income AS 'opi',
+gross_income AS 'gri',
+revenue AS 'rev',
+total_assets AS 'tass',
+total_liabilities AS 'tlib',
+current_assets AS 'cass',
+current_liabilities AS 'clib',
+operating_cash_flow AS 'oflow',
+investing_cash_flow AS 'iflow',
+financing_cash_flow AS 'fflow',
+starting_cash AS 'scash',
+ending_cash AS 'ecash'
+FROM reports WHERE success = 1;

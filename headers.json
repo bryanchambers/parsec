@@ -27,7 +27,8 @@
 					"operating income",
 					"operating income (loss)",
 					"operating loss",
-					"income (loss) from operations"
+					"income (loss) from operations",
+					"income from operations"
 				],
 				"values"   : 0,
 				"optional" : true
@@ -76,6 +77,44 @@
 				"accepted" : [
 					"revenue extended"
 					],
+				"values"   : 0,
+				"optional" : true
+			},
+			{
+				"header"   : "earnings_per_share",
+				"accepted" : [
+					"net diluted earnings per share of common stock",
+					"net loss per common share, basic and diluted",
+					"net loss per share, basic and diluted",
+					"net loss per share basic and diluted",
+					"diluted net income per common share",
+					"diluted income per common share",
+					"diluted net income per share",
+					"diluted earnings per share",
+					"diluted earnings per common share",
+					"basic and diluted loss per common share",
+					"diluted income per share",
+					"basic and diluted net income (loss) per share",
+					"diluted"
+				],
+				"values"   : 0,
+				"optional" : true
+			},
+			{
+				"header"   : "shares",
+				"accepted" : [
+					"weighted average number of shares used in computing net diluted earnings per share of common stock",
+					"basic and diluted weighted average shares used in the calculation of net loss per common share",
+					"weighted average number of common shares outstanding, basic and diluted",
+					"weighted average common equivalent shares outstanding, basic and diluted",
+					"weighted-average shares of common stock outstanding, basic and diluted",
+					"diluted weighted average common shares outstanding",
+					"basic and diluted weighted average shares outstanding",
+					"weighted average shares",
+					"weighted average number of dilutive stock options outstanding",
+					"weighted average number of common shares outstanding",
+					"diluted"
+				],
 				"values"   : 0,
 				"optional" : true
 			}
@@ -129,7 +168,8 @@
 				"header"   : "operating_cash_flow",
 				"accepted" : [
 					"net cash provided by operating activities",
-					"net cash used in operating activities"
+					"net cash used in operating activities",
+					"net cash used for operating activities"
 				],
 				"values"   : 0,
 				"optional" : true
@@ -138,6 +178,7 @@
 				"header"   : "investing_cash_flow",
 				"accepted" : [
 					"net cash used in investing activities",
+					"net cash used for investing activities",
 					"net cash provided by investing activities"
 				],
 				"values"   : 0,
@@ -147,7 +188,8 @@
 				"header"   : "financing_cash_flow",
 				"accepted" : [
 					"net cash provided by financing activities",
-					"net cash used in financing activities"
+					"net cash used in financing activities",
+					"net cash used for financing activities"
 				],
 				"values"   : 0,
 				"optional" : true

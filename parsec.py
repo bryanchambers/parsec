@@ -4,6 +4,7 @@ import json
 import re
 import string
 import datetime
+import sys
 
 
 
@@ -195,7 +196,9 @@ def parseRow(row, data, units, date_order):
 					if hasattr(cells[i], 'text'):
 						value = cleanNumber(cells[i].text)
 					else: value = cleanNumber(cells[i])
-					if value: values.append(int(value * units))
+					if value:
+						if "share" in header: values.append(value)
+						else: values.append(float(value * units))
 				
 				if len(values) == 2 or len(values) == 4:
 					if   date_order == 'std': output = values[0::2]
@@ -284,58 +287,67 @@ def parseReport(rows, units, date_order):
 			success = False
 			error   = {'*section': section['table'], 'missing': validate['missing']}
 			errors.append(error)
-			print 'Missing ' + validate['missing'][0]
 	return {'success': success, 'output': output, 'errors': errors}
 
 
 
 
 
-def parsec(filename):
+def parsec(filename, info):
 	success = False
 	errors  = []
 	output  = []
 
 	base_url = 'https://www.sec.gov/Archives/'
 	
+	updateStatus(info, 'Downloading report...')
 	page    = requests.get(base_url + filename).content
 	pg_tags = page.count('<')
-	print 'Downloaded ' + str(pg_tags)
+	updateStatus(info, 'Download complete. Parsing HTML...')
+
 	if pg_tags < 500000:
 		soup = bs4.BeautifulSoup(page, "lxml")
-		print 'Soupy'
-
 		units = findUnits(page)
+		
 		if units:
-			print 'Units ' + str(int(units * 1000))
-			
 			rows = getRows(page, soup)
-			try: print str(len(rows)) + ' Rows'
-			except TypeError: print 'Blank?'
-			
 			date_order = setDateOrder(rows)
+			
 			if date_order:
-				if date_order == 'std': print 'Standard dates'
-				else: print 'Reverse dates' 
-
-				print 'Parsing'
+				updateStatus(info, 'Parsing complete. Searching financial data...')
 				data = parseReport(rows, units, date_order)
 				if data['success']:
-					print 'Parse complete'
 					success = True
 					output  = data['output'] 
 				else: 
 					errors.append('Report parse failure')
 					errors.append(data['errors'])
-					print 'Parse failure'
-			else: 
-				errors.append('Date order not found') 
-				print 'Date order not found'
-		else: 
-			errors.append('Units not found')
-			print 'Units not found'
-	else:
-		errors.append('Report too long')
-		print 'Report too long'
+			else: errors.append('Date order not found') 
+		else: errors.append('Units not found')
+	else: errors.append('Report too long')
 
 	return {'success': success, 'output': output, 'errors': errors}
+
+
+
+
+
+def updateStatus(info, status):
+	valid   = info['valid']
+	total   = info['total']
+	if total == 0: total = 1
+	pvalid  = int((float(valid) / total) * 100)
+
+	start   = info['start']
+	now     = datetime.datetime.now()
+	elapsed = now - start
+	runtime = elapsed.total_seconds() / total
+	perday  = 86400 / float(runtime) / 1000
+
+	cik     = info['cik']
+	date    = info['date']
+
+	update  = str(valid) + '/' + str(total) + ' ' + str(pvalid) + '%' + ' Successful; ' + str(round(perday, 1)) + 'k/day; CIK ' + cik + '; Report ' + date + '; ' + now.strftime("%d %b %I:%M:%S%p") + ' ' + status + ' '*30 
+	sys.stdout.write('\r')
+	sys.stdout.write(update)
+	sys.stdout.flush()

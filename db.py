@@ -23,6 +23,8 @@ def createTable(cursor, table):
 		operating_income INT,
 		gross_income INT,
 		revenue INT,
+		earnings_per_share FLOAT,
+		shares INT,
 		net_income_ext INT,
 		operating_income_ext INT,
 		gross_income_ext INT,
@@ -66,6 +68,7 @@ def prepData(report, data):
 
 	return (report['cik'], report['date'], report['filename'],
 			d['net_income'], d['operating_income'], d['gross_income'], d['revenue'],
+			d['earnings_per_share'], d['shares'],
 			d['net_income_ext'], d['operating_income_ext'], d['gross_income_ext'], d['revenue_ext'],
 			d['total_assets'], d['total_liabilities'], d['current_assets'], d['current_liabilities'],
 			d['operating_cash_flow'], d['investing_cash_flow'], d['financing_cash_flow'], d['starting_cash'], d['ending_cash'])
@@ -78,22 +81,20 @@ def addReportSuccess(dbc, cursor, data):
 	query = """INSERT INTO reports(
 		cik, release_date, filename, success,
 		net_income, operating_income, gross_income, revenue,
+		earnings_per_share, shares,
 		net_income_ext, operating_income_ext, gross_income_ext, revenue_ext,
 		total_assets, total_liabilities, current_assets, current_liabilities,
 		operating_cash_flow, investing_cash_flow, financing_cash_flow, starting_cash, ending_cash) 
-		VALUES(%s, %s, %s, 1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+		VALUES(%s, %s, %s, 1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
 	try: 
 		cursor.execute(query, data)
 		dbc.commit()
 		success = True
 		errors  = 'None'
-		print 'Added to db'
 	except MySQLdb.Error, e:
 		success = False
 		errors  = str(e)
-		print 'Database error during addReportSuccess'
-		print errors
 
 	return {'success': success, 'errors': errors}
 
@@ -109,12 +110,9 @@ def addReportFail(dbc, cursor, report):
 		dbc.commit()
 		success = True
 		errors  = 'None'
-		print 'Added to db'
 	except MySQLdb.Error, e:
 		success = False
 		errors  = str(e)
-		print 'Database error during addReportFail'
-		print errors
 
 	return {'success': success, 'errors': errors}
 
@@ -133,10 +131,26 @@ def reportExists(dbc, cursor, filename):
 	except MySQLdb.Error, e:
 		errors  = str(e)
 		success = False
-		print 'Database error during reportExists'
-		print errors
 
 	return {'success': success, 'exists': exists, 'errors': errors}
+
+
+
+
+
+def countReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
 
 
 
@@ -153,8 +167,6 @@ def companyExists(dbc, cursor, cik):
 	except MySQLdb.Error, e:
 		errors  = str(e)
 		success = False
-		print 'Database error during companyExists'
-		print errors
 
 	return {'success': success, 'exists': exists, 'errors': errors}
 
@@ -170,11 +182,8 @@ def addCompany(dbc, cursor, report):
 		dbc.commit()
 		success = True
 		errors  = 'None'
-		print 'Added new company to db'
 	except MySQLdb.Error, e:
 		success = False
 		errors  = str(e)
-		print 'Database error during addCompany'
-		print errors
 
 	return {'success': success, 'errors': errors}
