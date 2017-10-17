@@ -14,14 +14,6 @@
 				"optional" : false
 			},
 			{
-				"header"   : "net_income_ext",
-				"accepted" : [
-					"net income extended"
-					],
-				"values"   : 0,
-				"optional" : true
-			},
-			{
 				"header"   : "operating_income",
 				"accepted" : [
 					"operating income",
@@ -34,26 +26,10 @@
 				"optional" : true
 			},
 			{
-				"header"   : "operating_income_ext",
-				"accepted" : [
-					"operating income extended"
-					],
-				"values"   : 0,
-				"optional" : true
-			},
-			{
 				"header"   : "gross_income",
 				"accepted" : [
 					"gross profit"
 				],
-				"values"   : 0,
-				"optional" : true
-			},
-			{
-				"header"   : "gross_income_ext",
-				"accepted" : [
-					"gross income extended"
-					],
 				"values"   : 0,
 				"optional" : true
 			},
@@ -71,52 +47,6 @@
 				],
 				"values"   : 0,
 				"optional" : false
-			},
-			{
-				"header"   : "revenue_ext",
-				"accepted" : [
-					"revenue extended"
-					],
-				"values"   : 0,
-				"optional" : true
-			},
-			{
-				"header"   : "earnings_per_share",
-				"accepted" : [
-					"net diluted earnings per share of common stock",
-					"net loss per common share, basic and diluted",
-					"net loss per share, basic and diluted",
-					"net loss per share basic and diluted",
-					"diluted net income per common share",
-					"diluted income per common share",
-					"diluted net income per share",
-					"diluted earnings per share",
-					"diluted earnings per common share",
-					"basic and diluted loss per common share",
-					"diluted income per share",
-					"basic and diluted net income (loss) per share",
-					"diluted"
-				],
-				"values"   : 0,
-				"optional" : true
-			},
-			{
-				"header"   : "shares",
-				"accepted" : [
-					"weighted average number of shares used in computing net diluted earnings per share of common stock",
-					"basic and diluted weighted average shares used in the calculation of net loss per common share",
-					"weighted average number of common shares outstanding, basic and diluted",
-					"weighted average common equivalent shares outstanding, basic and diluted",
-					"weighted-average shares of common stock outstanding, basic and diluted",
-					"diluted weighted average common shares outstanding",
-					"basic and diluted weighted average shares outstanding",
-					"weighted average shares",
-					"weighted average number of dilutive stock options outstanding",
-					"weighted average number of common shares outstanding",
-					"diluted"
-				],
-				"values"   : 0,
-				"optional" : true
 			}
 		]
 	},
@@ -147,7 +77,7 @@
 					"current assets"
 				],
 				"values"   : 0,
-				"optional" : true
+				"optional" : false
 			},
 			{
 				"header"   : "current_liabilities",
@@ -157,7 +87,7 @@
 					"current liabilities"
 				],
 				"values"   : 0,
-				"optional" : true
+				"optional" : false
 			}
 		]
 	},

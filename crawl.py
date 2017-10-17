@@ -24,7 +24,7 @@ completed = db.countReports(dbc, cursor)
 print str(completed['count']) + ' Existing Reports'
 print ''
 
-for year in range(2016, 1994, -1):
+for year in range(db.getLastReportYear(dbc, cursor)['year'], 1995, -1):
 	for qtr in range(4, 0, -1):
 		index = parsec.getIndex(year, qtr)
 		
