@@ -253,3 +253,40 @@ def getReports(dbc, cursor, cik, release_date):
 		errors  = str(e)
 
 	return {'success': success, 'errors': errors}
+
+
+
+
+
+def dbRead(dbc, cursor, query, parameters):
+	try: 
+		cursor.execute(query, parameters)
+		dbc.commit()
+		
+		fields = []
+		for field in cursor.description: fields.append(field[0])
+
+		result = cursor.fetchall()
+		data   = []
+		for line in result:
+			row = {}
+			for i in range(0, len(line)):
+				field = fields[i]
+				value = line[i]
+				row[field] = value
+			data.append(row)
+		return {'success': True, 'data': data }
+
+	except MySQLdb.Error, errors:
+		return {'success': False, 'errors': str(errors)}
+
+
+
+def getReports(dbc, cursor, cik, release_date, n):
+	query      = "SELECT * FROM reports WHERE cik = %s AND release_date <= %s AND success = 1 ORDER BY release_date DESC LIMIT %s"
+	date       = release_date.strftime('%Y-%m-%d')
+	parameters = [cik, date, n]
+	return dbRead(dbc, cursor, query, parameters)
+
+
+
