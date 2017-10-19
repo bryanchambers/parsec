@@ -288,5 +288,14 @@ def getReports(dbc, cursor, cik, release_date, n):
 	parameters = [cik, date, n]
 	return dbRead(dbc, cursor, query, parameters)
 
+def getQuarterDateRange(year, qtr):
+	qtrStart  = strptime(qtrStartString, '%Y-%m-%d')
+	qtrEnd    = strptime(qtrEndString,   '%Y-%m-%d')
+	return { 'start': qtrStart, 'end': qtrEnd }
 
 
+def getCompletedReportList(dbc, cursor, year, qtr):
+	query      = "SELECT filename FROM reports WHERE release_date >= '%s' AND release_date <= '%s'"
+	qtrDates   = getQuarterDateRange(year, qtr)
+	parameters = [qtrDates['start'], qtrDates['end']]
+	reports    = dbRead(dbc, cursor, query, parameters)

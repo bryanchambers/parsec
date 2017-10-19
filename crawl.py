@@ -32,15 +32,14 @@ for year in range(startYear, endYear, -1):
 		reportList = getCompletedReportList(dbc, cursor, year, qtr)
 		
 		for report in index:
-			info['cik']  = report['cik']
-			info['date'] = report['date']
-			
-			chk_company = db.companyExists(dbc, cursor, report['cik'])
-			if not chk_company['exists'] and chk_company['success']:
-				db.addCompany(dbc, cursor, report)
+			if(report['filename'] not in reportList):
+				info['cik']  = report['cik']
+				info['date'] = report['date']
+				
+				chk_company = db.companyExists(dbc, cursor, report['cik'])
+				if not chk_company['exists'] and chk_company['success']:
+					db.addCompany(dbc, cursor, report)
 
-			chk_report = db.reportExists(dbc, cursor, report['filename'])
-			if not chk_report['exists'] and chk_report['success']:
 				info['valid'] = valid;
 				info['total'] = total;
 				output = parsec.parsec(report['filename'], info)
