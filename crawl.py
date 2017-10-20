@@ -28,7 +28,7 @@ print("Success | Total | Percent | perDay | CIK | Date | Status |")
 startYear = db.getLastReportYear(dbc, cursor)['year']
 endYear   = 1995
 for year in range(startYear, endYear, -1):
-	for qtr in range(4, 0, -1):
+	for qtr in range(5, 1, -1):
 		index = parsec.getIndex(year, qtr)
 		reportList = db.getCompletedReportList(dbc, cursor, year, qtr)
 		print(reportList)
