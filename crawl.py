@@ -23,14 +23,16 @@ info['start'] = datetime.datetime.now()
 completed = db.countReports(dbc, cursor)
 print str(completed['count']) + ' Existing Reports'
 print ''
+print("Success | Total | Percent | perDay | CIK | Date | Status |")
 
 startYear = db.getLastReportYear(dbc, cursor)['year']
 endYear   = 1995
 for year in range(startYear, endYear, -1):
 	for qtr in range(4, 0, -1):
 		index = parsec.getIndex(year, qtr)
-		reportList = getCompletedReportList(dbc, cursor, year, qtr)
-		
+		reportList = db.getCompletedReportList(dbc, cursor, year, qtr)
+		print(reportList)
+
 		for report in index:
 			if(report['filename'] not in reportList):
 				info['cik']  = report['cik']

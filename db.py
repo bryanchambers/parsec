@@ -280,13 +280,7 @@ def dbRead(dbc, cursor, query, parameters):
 	except MySQLdb.Error, errors:
 		return {'success': False, 'errors': str(errors)}
 
-0 3 6  9
-3 6 9 12
 
-1-4
-2-7
-5-10
-8-12
 
 def getReports(dbc, cursor, cik, release_date, n):
 	query      = "SELECT * FROM reports WHERE cik = %s AND release_date <= %s AND success = 1 ORDER BY release_date DESC LIMIT %s"
@@ -301,19 +295,27 @@ def getQuarterDateRange(year, qtr):
 	monthEnd   = monthStart + 6
 	if(monthStart <  1): monthStart =  1
 	if(monthEnd   > 12): monthend   = 12
-	
-	qtrStart = strptime(qtrStartString, '%Y-%m-%d')
-	qtrEnd   = strptime(qtrEndString,   '%Y-%m-%d')
+
+	qtrStartString = str(year) + '-' + str(monthStart) + '-01'
+	qtrEndString   = str(year) + '-' + str(monthEnd)   + '-01'
+
+	qtrStart = datetime.datetime.strptime(qtrStartString, '%Y-%m-%d').date()
+	qtrEnd   = datetime.datetime.strptime(qtrEndString,   '%Y-%m-%d').date()
 	return { 'start': qtrStart, 'end': qtrEnd }
 
 
 
 
 def getCompletedReportList(dbc, cursor, year, qtr):
-	query      = "SELECT filename FROM reports WHERE release_date >= '%s' AND release_date <= '%s'"
 	qtrDates   = getQuarterDateRange(year, qtr)
-	parameters = [qtrDates['start'], qtrDates['end']]
-	reports    = dbRead(dbc, cursor, query, parameters)
-	output     = {}
-	for row in reports: output[row['filename']] = True
-	return output
+	query      = "SELECT filename FROM reports WHERE release_date >= '" + qtrDates['start'] + "' AND release_date <= '" + qtrDates['end'] + "'"
+	print(query)
+	reports    = dbRead(dbc, cursor, query, None)
+	
+	if(reports['success']):
+		output = {}
+		for row in reports['data']: output[row['filename']] = True
+		return output
+	else:
+		print(reports['errors'])
+		return False

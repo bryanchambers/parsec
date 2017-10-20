@@ -347,7 +347,7 @@ def updateStatus(info, status):
 	cik     = info['cik']
 	date    = info['date']
 
-	update  = str(valid) + '/' + str(total) + ' ' + str(pvalid) + '%' + ' Successful; ' + str(round(perday, 1)) + 'k/day; CIK ' + cik + '; Report ' + date + '; ' + now.strftime("%d %b %I:%M:%S%p") + ' ' + status + ' '*30 
+	update  = str(valid) + ' | ' + str(total) + ' | ' + str(pvalid) + '%' + ' | ' + str(round(perday, 1)) + 'k | ' + cik + ' | ' + date + ' | ' + now.strftime("%d %b %I:%M:%S%p") + ' ' + status + ' '*30 
 	sys.stdout.write('\r')
 	sys.stdout.write(update)
 	sys.stdout.flush()
