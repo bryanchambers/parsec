@@ -18,41 +18,49 @@ valid = 0
 total = 0
 
 info = {}
-info['start'] = datetime.datetime.now()
+info['start']   = datetime.datetime.now()
+info['valid']   = 0
+info['total']   = 0
+info['skipped'] = 0
+info['caught']  = 0
 
 completed = db.countReports(dbc, cursor)
 print str(completed['count']) + ' Existing Reports'
 print ''
-print("Success | Total | Percent | perDay | CIK | Date | Status |")
+startYear = int(raw_input('Start Year: '))
+endYear = int(raw_input('  End Year: '))
 
-startYear = db.getLastReportYear(dbc, cursor)['year']
-endYear   = 1995
-for year in range(startYear, endYear, -1):
-	for qtr in range(5, 1, -1):
+print("Success | Total | Percent | perDay | Skipped |  Caught |      CIK |    Date    | Status")
+
+
+for year in range(startYear, endYear - 1, -1):
+	for qtr in range(4, 0, -1):
 		index = parsec.getIndex(year, qtr)
 		reportList = db.getCompletedReportList(dbc, cursor, year, qtr)
-		print(reportList)
 
 		for report in index:
-			if(report['filename'] not in reportList):
-				info['cik']  = report['cik']
-				info['date'] = report['date']
-				
-				chk_company = db.companyExists(dbc, cursor, report['cik'])
-				if not chk_company['exists'] and chk_company['success']:
-					db.addCompany(dbc, cursor, report)
+			info['cik']  = report['cik']
+			info['date'] = report['date']
+			
+			if(report['filename'] not in reportList['data']):
+				reportExists = db.reportExists(dbc, cursor, report['filename'])
+				if(not reportExists['data']):
+					chk_company = db.companyExists(dbc, cursor, report['cik'])
+					if not chk_company['exists'] and chk_company['success']:
+						db.addCompany(dbc, cursor, report)
 
-				info['valid'] = valid;
-				info['total'] = total;
-				output = parsec.parsec(report['filename'], info)
-				
-				if output['success']:
-					data = db.prepData(report, output)
-					db.addReportSuccess(dbc, cursor, data)
-					valid += 1
-					parsec.updateStatus(info, 'Success!')
-				else:
-					db.addReportFail(dbc, cursor, report)
-					parsec.updateStatus(info, 'Failed')
-				
-				total += 1
+					output = parsec.parsec(report['filename'], info)
+					info['total'] += 1
+					
+					if output['success']:
+						data = db.prepData(report, output)
+						db.addReportSuccess(dbc, cursor, data)
+						info['valid'] += 1
+						parsec.updateStatus(info, 'Success!')
+					else:
+						db.addReportFail(dbc, cursor, report)
+						parsec.updateStatus(info, 'Failed')
+				else: info['caught'] += 1
+			else: 
+				info['skipped'] += 1
+				parsec.updateStatus(info, 'Report already exists')

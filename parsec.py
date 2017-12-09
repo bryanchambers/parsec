@@ -301,30 +301,36 @@ def parsec(filename, info):
 	base_url = 'https://www.sec.gov/Archives/'
 	
 	updateStatus(info, 'Downloading report...')
-	page    = requests.get(base_url + filename).content
-	pg_tags = page.count('<')
-	updateStatus(info, 'Download complete. Parsing HTML...')
+	try:
+		page = requests.get(base_url + filename).content
+	except:
+		page = False
+		errors.append('Download failed')
 
-	if pg_tags < 500000:
-		soup = bs4.BeautifulSoup(page, "lxml")
-		units = findUnits(page)
-		
-		if units:
-			rows = getRows(page, soup)
-			date_order = setDateOrder(rows)
+	if page:
+		pg_tags = page.count('<')
+		updateStatus(info, 'Download complete. Parsing HTML...')
+
+		if pg_tags < 500000:
+			soup = bs4.BeautifulSoup(page, "lxml")
+			units = findUnits(page)
 			
-			if date_order:
-				updateStatus(info, 'Parsing complete. Searching financial data...')
-				data = parseReport(rows, units, date_order)
-				if data['success']:
-					success = True
-					output  = data['output'] 
-				else: 
-					errors.append('Report parse failure')
-					errors.append(data['errors'])
-			else: errors.append('Date order not found') 
-		else: errors.append('Units not found')
-	else: errors.append('Report too long')
+			if units:
+				rows = getRows(page, soup)
+				date_order = setDateOrder(rows)
+				
+				if date_order:
+					updateStatus(info, 'Parsing complete. Searching financial data...')
+					data = parseReport(rows, units, date_order)
+					if data['success']:
+						success = True
+						output  = data['output'] 
+					else: 
+						errors.append('Report parse failure')
+						errors.append(data['errors'])
+				else: errors.append('Date order not found') 
+			else: errors.append('Units not found')
+		else: errors.append('Report too long')
 
 	return {'success': success, 'output': output, 'errors': errors}
 
@@ -346,8 +352,23 @@ def updateStatus(info, status):
 
 	cik     = info['cik']
 	date    = info['date']
+	skipped = info['skipped']
+	caught = info['caught']
 
-	update  = str(valid) + ' | ' + str(total) + ' | ' + str(pvalid) + '%' + ' | ' + str(round(perday, 1)) + 'k | ' + cik + ' | ' + date + ' | ' + now.strftime("%d %b %I:%M:%S%p") + ' ' + status + ' '*30 
+	update = []
+	update.append(str(valid).rjust(7))
+	update.append(str(total).rjust(5))
+	update.append(str(pvalid).rjust(6) + '%')
+	update.append(str(int(perday)).rjust(5) + 'k')
+	update.append(str(skipped).rjust(7))
+	update.append(str(caught).rjust(7))
+	update.append(str(cik).rjust(8))
+	update.append(date.rjust(10))
+	update.append(now.strftime("%d %b %I:%M:%S%p") + ' ' + status.ljust(50))
+	
+	output = ''
+	for item in update:
+		output += item + ' | '
 	sys.stdout.write('\r')
-	sys.stdout.write(update)
+	sys.stdout.write(output)
 	sys.stdout.flush()

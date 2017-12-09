@@ -1,5 +1,5 @@
 import db
-
+import time
 
 # Choose report
 # Get company cik
@@ -11,13 +11,8 @@ import db
 dbc    = db.dbConnect('localhost', 'root', 'atlas', 'parsec')
 cursor = db.getCursor(dbc)
 
-unscored = db.getUnscoredReports(dbc, cursor)
-
-for report in unscored['data']:
-	db.getReports(dbc, cursor, report['cik'], report['release_date'])
 
 
-data = db.getReports(dbc, cursor, cik, release_date, 20)
 
 
 
@@ -29,28 +24,28 @@ data = db.getReports(dbc, cursor, cik, release_date, 20)
 
 def formatRegressionData(data):
 	output = {}
-	output['profit_margin']    = {}
-	output['return_on_equity'] = {}
-	output['debt_coverage']    = {}
-	output['current_leverage'] = {}
-	output['total_leverage']   = {}
-	output['revenue']          = {}
-	output['net_income']       = {}
-	output['long_term_assets'] = {}
-	output['equity']           = {}
+	output['profit_margin_growth']    = {}
+	output['return_on_equity_growth'] = {}
+	output['debt_coverage_growth']    = {}
+	output['current_leverage_growth'] = {}
+	output['total_leverage_growth']   = {}
+	output['revenue_growth']          = {}
+	output['net_income_growth']       = {}
+	output['long_term_assets_growth'] = {}
+	output['equity_growth']           = {}
 
-	for each row in data:
-		time = int(row['release_date'].timestamp / 86400)
+	for row in data:
+		timestamp = int(time.mktime(row['release_date'].timetuple()) / 86400)
 		
-		output['profit_margin'][time]    = row['net_income'] / row['revenue']
-		output['return_on_equity'][time] = row['net_income'] / (row['total_assets'] - row['total_liabilities'])
-		output['debt_coverage'][time]    = row['net_income'] / row['current_liabilities']
-		output['current_leverage'][time] = row['current_assets'] / row['current_liabilities']
-		output['total_leverage'][time]   = row['total_assets'] / row['total_liabilities']
-		output['revenue'][time]          = row['revenue']
-		output['net_income'][time]       = row['net_income']
-		output['long_term_assets'][time] = row['total_assets'] - row['current_assets']
-		output['equity'][time]           = row['total_assets'] - row['total_liabilities']
+		output['profit_margin_growth'][timestamp]    = row['net_income'] / row['revenue']
+		output['return_on_equity_growth'][timestamp] = row['net_income'] / (row['total_assets'] - row['total_liabilities'])
+		output['debt_coverage_growth'][timestamp]    = row['net_income'] / row['current_liabilities']
+		output['current_leverage_growth'][timestamp] = row['current_assets'] / row['current_liabilities']
+		output['total_leverage_growth'][timestamp]   = row['total_assets'] / row['total_liabilities']
+		output['revenue_growth'][timestamp]          = row['revenue']
+		output['net_income_growth'][timestamp]       = row['net_income']
+		output['long_term_assets_growth'][timestamp] = row['total_assets'] - row['current_assets']
+		output['equity_growth'][timestamp]           = row['total_assets'] - row['total_liabilities']
 	return output
 
 
@@ -68,12 +63,12 @@ def formatAvgData(data):
 	output['current_leverage'] = []
 	output['total_leverage']   = []
 
-	for each row in data:
-		output['profit_margin'].append(row['net_income'] / row['revenue'])
-		output['return_on_equity'].append(row['net_income'] / (row['total_assets'] - row['total_liabilities']))
-		output['debt_coverage'].append(row['net_income'] / row['current_liabilities'])
+	for row in data:
+		output['profit_margin'].append(row['net_income']        / row['revenue'])
+		output['return_on_equity'].append(row['net_income']     / (row['total_assets'] - row['total_liabilities']))
+		output['debt_coverage'].append(row['net_income']        / row['current_liabilities'])
 		output['current_leverage'].append(row['current_assets'] / row['current_liabilities'])
-		output['total_leverage'].append(row['total_assets'] / row['total_liabilities'])
+		output['total_leverage'].append(row['total_assets']     / row['total_liabilities'])
 	return output
 
 
@@ -106,33 +101,37 @@ def calcScores(avgData, regressionData):
 
 
 
-def avg(data):
+def getAvg(data):
 	n   = len(data)
-	avg = { x: 0, y: 0 }
+	avg = {}
+	avg['x'] = 0
+	avg['y'] = 0
 	
 	for x in data:
-		avg.x += x
-		avg.y += data[x]
+		avg['x'] += x
+		avg['y'] += data[x]
 	
-	avg.x /= n
-	avg.y /= n
+	avg['x'] /= n
+	avg['y'] /= n
 	return avg
 
 
 
 
-def sigma(data):
-	avg   = avg(data)
+def getSigma(data):
+	avg   = getAvg(data)
 	n     = len(data)
-	sigma = { x: 0, y: 0 }
+	sigma = {}
+	sigma['x'] = 0
+	sigma['y'] = 0
 	
 	for x in data:
 		y = data[x]
-		sigma.x += (x - avg.x) ** 2
-		sigma.y += (y - avg.y) ** 2
+		sigma['x'] += (x - avg['x']) ** 2
+		sigma['y'] += (y - avg['y']) ** 2
 
-	sigma.x = (sigma.x / (n - 1)) ** 0.5
-	sigma.y = (sigma.y / (n - 1)) ** 0.5
+	sigma['x'] = (sigma['x'] / (n - 1)) ** 0.5
+	sigma['y'] = (sigma['y'] / (n - 1)) ** 0.5
 	return sigma
 
 
@@ -140,15 +139,15 @@ def sigma(data):
 
 
 def correlation(data):
-	avg = avg(data)
+	avg = getAvg(data)
 	sumXY = 0
 	sumX2 = 0
 	sumY2 = 0
 
 	for x in data:
 		y = data[x]
-		xMinusAvg  = x - avg.x
-		yMinusAvg  = y - avg.y
+		xMinusAvg  = x - avg['x']
+		yMinusAvg  = y - avg['y']
 		xyMinusAvg = xMinusAvg * yMinusAvg
 		
 		xMinusAvg2 = xMinusAvg ** 2
@@ -163,18 +162,43 @@ def correlation(data):
 
 
 def slope(data):
-	sigma = sigma(data)
-	return correlation(data) * (sigma.y / sigma.x)
+	sigma = getSigma(data)
+	return correlation(data) * (sigma['y'] / sigma['x'])
 
 
 
 
 def regressionScore(data):
-	avg = avg(data)
-	return slope(data) / avg.y
+	return slope(data) / getAvg(data)['y']
 
 
 
 
 def avgScore(data):
 	return sum(data) / len(data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+unscored = db.getUnscoredReports(dbc, cursor)
+
+if(unscored['success']):
+	for report in unscored['data']:
+		avgReports        = db.getReports(dbc, cursor, report['cik'], report['release_date'], 6)
+		regressionReports = db.getReports(dbc, cursor, report['cik'], report['release_date'], 20)
+		print(len(avgReports['data']))
+		if(avgReports['success'] and regressionReports['success']):
+			avgData        = formatAvgData(avgReports['data'])
+			regressionData = formatRegressionData(regressionReports['data'])
+			#print(avgData['profit_margin'])
+			#scores         = calcScores(avgData, regressionData)
+			#print(scores)

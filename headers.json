@@ -59,7 +59,7 @@
 					"total assets"
 				],
 				"values"   : 0,
-				"optional" : false
+				"optional" : true
 			},
 			{
 				"header"   : "total_liabilities",
@@ -67,7 +67,7 @@
 					"total liabilities"
 				],
 				"values"   : 0,
-				"optional" : false
+				"optional" : true
 			},
 			{
 				"header"   : "current_assets",
@@ -77,7 +77,7 @@
 					"current assets"
 				],
 				"values"   : 0,
-				"optional" : false
+				"optional" : true
 			},
 			{
 				"header"   : "current_liabilities",
@@ -87,7 +87,7 @@
 					"current liabilities"
 				],
 				"values"   : 0,
-				"optional" : false
+				"optional" : true
 			}
 		]
 	},

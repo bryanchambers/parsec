@@ -125,19 +125,6 @@ def addReportFail(dbc, cursor, report):
 
 
 
-def reportExists(dbc, cursor, filename):
-	try: 
-		cursor.execute("SELECT COUNT(*) FROM reports WHERE filename = %s", [filename])
-		dbc.commit()
-		result  = cursor.fetchall()
-		exists  = result[0][0]
-		success = True
-		errors  = 'None'
-	except MySQLdb.Error, e:
-		errors  = str(e)
-		success = False
-
-	return {'success': success, 'exists': exists, 'errors': errors}
 
 
 
@@ -214,45 +201,10 @@ def getLastReportYear(dbc, cursor):
 
 
 
-def getUnscoredReports(dbc, cursor):
-	try: 
-		cursor.execute("SELECT cik, release_date FROM reports WHERE profit_margin IS NULL LIMIT 10")
-		dbc.commit()
-		result  = cursor.fetchall()
-		data = []
-		for row in result:
-			data.append({'cik': row[0], 'release_date': row[1]});
-		success = True
-		errors  = 'None'
-	except MySQLdb.Error, e:
-		success = False
-		errors  = str(e)
-
-	return {'success': success, 'data': data, 'errors': errors}
 
 
 
 
-
-
-
-def getReports(dbc, cursor, cik, release_date):
-	date = release_date.strftime('%Y-%m-%d')
-	query = "SELECT * FROM reports WHERE cik = %s AND release_date <= %s ORDER BY release_date DESC LIMIT 20"
-	try: 
-		cursor.execute(query, [cik, date])
-		dbc.commit()
-		result  = cursor.fetchall()
-		desc    = cursor.description
-		for line in desc:
-			print(line[0])
-		success = True
-		errors  = 'None'
-	except MySQLdb.Error, e:
-		success = False
-		errors  = str(e)
-
-	return {'success': success, 'errors': errors}
 
 
 
@@ -283,24 +235,20 @@ def dbRead(dbc, cursor, query, parameters):
 
 
 def getReports(dbc, cursor, cik, release_date, n):
-	query      = "SELECT * FROM reports WHERE cik = %s AND release_date <= %s AND success = 1 ORDER BY release_date DESC LIMIT %s"
-	date       = release_date.strftime('%Y-%m-%d')
-	parameters = [cik, date, n]
-	return dbRead(dbc, cursor, query, parameters)
+	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' AND success = 1 ORDER BY release_date DESC LIMIT " + str(n)
+	print(query)
+	return dbRead(dbc, cursor, query, None)
 
 
 
 def getQuarterDateRange(year, qtr):
-	monthStart = int(12 / qtr) - 1
-	monthEnd   = monthStart + 6
+	monthEnd   = int(qtr * 3)
+	monthStart = monthEnd - 4
 	if(monthStart <  1): monthStart =  1
-	if(monthEnd   > 12): monthend   = 12
+	if(monthEnd   > 12): monthEnd   = 12
 
-	qtrStartString = str(year) + '-' + str(monthStart) + '-01'
-	qtrEndString   = str(year) + '-' + str(monthEnd)   + '-01'
-
-	qtrStart = datetime.datetime.strptime(qtrStartString, '%Y-%m-%d').date()
-	qtrEnd   = datetime.datetime.strptime(qtrEndString,   '%Y-%m-%d').date()
+	qtrStart = str(year) + '-' + format(monthStart, '02') + '-01'
+	qtrEnd   = str(year) + '-' + format(monthEnd,   '02') + '-01'
 	return { 'start': qtrStart, 'end': qtrEnd }
 
 
@@ -309,13 +257,29 @@ def getQuarterDateRange(year, qtr):
 def getCompletedReportList(dbc, cursor, year, qtr):
 	qtrDates   = getQuarterDateRange(year, qtr)
 	query      = "SELECT filename FROM reports WHERE release_date >= '" + qtrDates['start'] + "' AND release_date <= '" + qtrDates['end'] + "'"
-	print(query)
 	reports    = dbRead(dbc, cursor, query, None)
-	
+
 	if(reports['success']):
 		output = {}
 		for row in reports['data']: output[row['filename']] = True
-		return output
+		reports['data'] = output
+	return reports
+
+
+
+
+def reportExists(dbc, cursor, filename):
+	query   = "SELECT * FROM reports WHERE filename = '" + filename + "'"
+	reports = dbRead(dbc, cursor, query, None)
+
+	if(reports['success'] and len(reports['data']) > 0):
+		reports['data'] = True
 	else:
-		print(reports['errors'])
-		return False
+		reports['data'] = False
+	return reports
+
+
+
+def getUnscoredReports(dbc, cursor):
+	query = "SELECT cik, release_date FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 100"
+	return dbRead(dbc, cursor, query, None)
