@@ -20,19 +20,19 @@ def createTable(cursor, table):
 		release_date DATE NOT NULL,
 		filename VARCHAR(255) NOT NULL,
 		success TINYINT,
-		net_income INT,
-		operating_income INT,
-		gross_income INT,
-		revenue INT,
-		total_assets INT,
-		total_liabilities INT,
-		current_assets INT,
-		current_liabilities INT,
-		operating_cash_flow INT,
-		investing_cash_flow INT,
-		financing_cash_flow INT,
-		starting_cash INT,
-		ending_cash INT,
+		net_income BIGINT,
+		operating_income BIGINT,
+		gross_income BIGINT,
+		revenue BIGINT,
+		total_assets BIGINT,
+		total_liabilities BIGINT,
+		current_assets BIGINT,
+		current_liabilities BIGINT,
+		operating_cash_flow BIGINT,
+		investing_cash_flow BIGINT,
+		financing_cash_flow BIGINT,
+		starting_cash BIGINT,
+		ending_cash BIGINT,
 		profit_margin FLOAT,
 		return_on_equity FLOAT,
 		debt_coverage FLOAT,
@@ -84,7 +84,7 @@ def prepData(report, data):
 
 
 
-def addReportSuccess(dbc, cursor, data):
+def addReportSuccessOld(dbc, cursor, data):
 	query = """INSERT INTO reports(
 		cik, release_date, filename, success,
 		net_income, operating_income, gross_income, revenue,
@@ -107,6 +107,31 @@ def addReportSuccess(dbc, cursor, data):
 
 
 
+def addReportSuccess(dbc, cursor, data, id):
+	query = """UPDATE reports SET 
+		cik = %s, release_date = %s, filename = %s, success = 1,
+		net_income = %s, operating_income = %s, gross_income = %s, revenue = %s,
+		total_assets = %s, total_liabilities = %s, current_assets = %s, current_liabilities = %s,
+		operating_cash_flow = %s, investing_cash_flow = %s, financing_cash_flow = %s, starting_cash = %s, ending_cash = %s 
+		WHERE id = """ + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+		print(errors)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
 def addReportFail(dbc, cursor, report):
 	query = "INSERT INTO reports(cik, release_date, filename, success) VALUES(%s, %s, %s, 0)"
 
@@ -123,7 +148,37 @@ def addReportFail(dbc, cursor, report):
 
 
 
+def addReport(dbc, cursor, report):
+	query = "INSERT INTO reports(cik, release_date, filename) VALUES(%s, %s, %s)"
 
+	try: 
+		cursor.execute(query, [report['cik'], report['date'], report['filename']])
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+def getReportID(dbc, cursor):
+	try: 
+		cursor.execute("SELECT LAST_INSERT_ID() from reports")
+		dbc.commit()
+		result  = cursor.fetchall()
+		id      = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+
+	return {'success': success, 'id': id, 'errors': errors}
 
 
 

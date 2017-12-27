@@ -45,20 +45,28 @@ for year in range(startYear, endYear - 1, -1):
 			if(report['filename'] not in reportList['data']):
 				reportExists = db.reportExists(dbc, cursor, report['filename'])
 				if(not reportExists['data']):
+					# Add company to db if necessary
 					chk_company = db.companyExists(dbc, cursor, report['cik'])
 					if not chk_company['exists'] and chk_company['success']:
 						db.addCompany(dbc, cursor, report)
 
+					# Add report placeholder
+					db.addReport(dbc, cursor, report)
+					id = db.getReportID(dbc, cursor)
+
+					# Parse report
 					output = parsec.parsec(report['filename'], info)
 					info['total'] += 1
 					
+					# Parse succeeded
 					if output['success']:
 						data = db.prepData(report, output)
-						db.addReportSuccess(dbc, cursor, data)
+						db.addReportSuccess(dbc, cursor, data, id['id'])
 						info['valid'] += 1
 						parsec.updateStatus(info, 'Success!')
+					
+					# Parse failed
 					else:
-						db.addReportFail(dbc, cursor, report)
 						parsec.updateStatus(info, 'Failed')
 				else: info['caught'] += 1
 			else: 
