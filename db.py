@@ -33,11 +33,11 @@ def createTable(cursor, table):
 		financing_cash_flow BIGINT,
 		starting_cash BIGINT,
 		ending_cash BIGINT,
-		profit_margin FLOAT,
-		return_on_equity FLOAT,
-		debt_coverage FLOAT,
-		current_leverage FLOAT,
-		total_leverage FLOAT,
+		profit_margin SMALLINT,
+		return_on_equity SMALLINT,
+		debt_coverage SMALLINT,
+		current_leverage SMALLINT,
+		total_leverage SMALLINT,
 		profit_margin_growth FLOAT,
 		return_on_equity_growth FLOAT,
 		debt_coverage_growth FLOAT,
@@ -113,6 +113,28 @@ def addReportSuccess(dbc, cursor, data, id):
 		net_income = %s, operating_income = %s, gross_income = %s, revenue = %s,
 		total_assets = %s, total_liabilities = %s, current_assets = %s, current_liabilities = %s,
 		operating_cash_flow = %s, investing_cash_flow = %s, financing_cash_flow = %s, starting_cash = %s, ending_cash = %s 
+		WHERE id = """ + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+		print(errors)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
+def addRatios(dbc, cursor, data, id):
+	query = """UPDATE reports SET 
+		profit_margin = %s, return_on_equity = %s, debt_coverage = %s, current_leverage = %s, total_leverage = %s
 		WHERE id = """ + str(id) + " LIMIT 1"
 
 	try: 
@@ -337,4 +359,9 @@ def reportExists(dbc, cursor, filename):
 
 def getUnscoredReports(dbc, cursor):
 	query = "SELECT cik, release_date FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 100"
+	return dbRead(dbc, cursor, query, None)
+
+
+def getUncalculatedReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 1000"
 	return dbRead(dbc, cursor, query, None)
