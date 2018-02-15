@@ -38,15 +38,15 @@ def createTable(cursor, table):
 		debt_coverage SMALLINT,
 		current_leverage SMALLINT,
 		total_leverage SMALLINT,
-		profit_margin_growth FLOAT,
-		return_on_equity_growth FLOAT,
-		debt_coverage_growth FLOAT,
-		current_leverage_growth FLOAT,
-		total_leverage_growth FLOAT,
-		revenue_growth FLOAT,
-		net_income_growth FLOAT,
-		long_term_asset_growth FLOAT,
-		equity_growth FLOAT)"""
+		profit_margin_growth SMALLINT,
+		return_on_equity_growth SMALLINT,
+		debt_coverage_growth SMALLINT,
+		current_leverage_growth SMALLINT,
+		total_leverage_growth SMALLINT,
+		revenue_growth SMALLINT,
+		net_income_growth SMALLINT,
+		long_term_asset_growth SMALLINT,
+		equity_growth SMALLINT)"""
 
 	query['companies'] = """CREATE TABLE IF NOT EXISTS companies(
 		cik INT NOT NULL PRIMARY KEY,
@@ -132,9 +132,27 @@ def addReportSuccess(dbc, cursor, data, id):
 
 
 
-def addRatios(dbc, cursor, data, id):
+def saveRatios(dbc, cursor, data, id):
 	query = """UPDATE reports SET 
 		profit_margin = %s, return_on_equity = %s, debt_coverage = %s, current_leverage = %s, total_leverage = %s
+		WHERE id = """ + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+
+	return {'success': success, 'errors': errors}
+
+
+
+def saveAverages(dbc, cursor, data, id):
+	query = """UPDATE reports SET 
+		profit_margin_avg = %s, return_on_equity_avg = %s, debt_coverage_avg = %s, current_leverage_avg = %s, total_leverage_avg = %s
 		WHERE id = """ + str(id) + " LIMIT 1"
 
 	try: 
@@ -148,6 +166,68 @@ def addRatios(dbc, cursor, data, id):
 		print(errors)
 
 	return {'success': success, 'errors': errors}
+
+
+
+def saveGrowth(dbc, cursor, data, id):
+	query = """UPDATE reports SET 
+		profit_margin_growth = %s, return_on_equity_growth = %s, debt_coverage_growth = %s, current_leverage_growth = %s, total_leverage_growth = %s, revenue_growth = %s, net_income_growth = %s, long_term_asset_growth = %s, equity_growth = %s
+		WHERE id = """ + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+		print(errors)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
+def saveScores(dbc, cursor, data, id):
+	query = """UPDATE reports SET 
+		profit_margin_score = %s, return_on_equity_score = %s, debt_coverage_score = %s, current_leverage_score = %s, total_leverage_score = %s, profit_margin_growth_score = %s, return_on_equity_growth_score = %s, debt_coverage_growth_score = %s, current_leverage_growth_score = %s, total_leverage_growth_score = %s, revenue_growth_score = %s, net_income_growth_score = %s, long_term_asset_growth_score = %s, equity_growth_score = %s
+		WHERE id = """ + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+		print(errors)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
+def saveOverallScore(dbc, cursor, data, id):
+	query = "UPDATE reports SET overall_score = %s WHERE id = " + str(id) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, data)
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+		print(errors)
+
+	return {'success': success, 'errors': errors}
+
 
 
 
@@ -216,6 +296,94 @@ def countReports(dbc, cursor):
 		success = True
 		errors  = 'None'
 	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
+
+
+
+def countSuccessfulReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports WHERE success = 1")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
+
+
+
+
+def countRatioReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports WHERE success = 1 AND profit_margin IS NOT NULL")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
+
+
+
+
+def countAvgReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_avg IS NOT NULL")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
+
+
+
+
+
+def countGrowthReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_growth IS NOT NULL")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		errors  = str(e)
+		success = False
+
+	return {'success': success, 'count': count, 'errors': errors}
+
+
+
+
+
+
+def countScoredReports(dbc, cursor):
+	try: 
+		cursor.execute("SELECT COUNT(*) FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_score IS NOT NULL")
+		dbc.commit()
+		result  = cursor.fetchall()
+		count  = result[0][0]
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		count   = False
 		errors  = str(e)
 		success = False
 
@@ -313,7 +481,6 @@ def dbRead(dbc, cursor, query, parameters):
 
 def getReports(dbc, cursor, cik, release_date, n):
 	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' AND success = 1 ORDER BY release_date DESC LIMIT " + str(n)
-	print(query)
 	return dbRead(dbc, cursor, query, None)
 
 
@@ -357,11 +524,36 @@ def reportExists(dbc, cursor, filename):
 
 
 
-def getUnscoredReports(dbc, cursor):
-	query = "SELECT cik, release_date FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 100"
+def getGrowthReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_growth IS NULL ORDER BY release_date DESC LIMIT 10"
 	return dbRead(dbc, cursor, query, None)
 
 
-def getUncalculatedReports(dbc, cursor):
-	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 1000"
+def getGrowthReportsForCalc(dbc, cursor, cik, release_date):
+	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND success = 1 AND profit_margin IS NOT NULL AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' ORDER BY release_date DESC LIMIT 12"
+	return dbRead(dbc, cursor, query, None)
+
+
+
+def getAvgReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_avg IS NULL ORDER BY release_date DESC LIMIT 10"
+	return dbRead(dbc, cursor, query, None)
+
+
+def getAvgReportsForCalc(dbc, cursor, cik, release_date):
+	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND success = 1 AND profit_margin IS NOT NULL AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' ORDER BY release_date DESC LIMIT 6"
+	return dbRead(dbc, cursor, query, None)
+
+
+def getRatioReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 100"
+	return dbRead(dbc, cursor, query, None)
+
+def getUnscoredReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin_growth IS NOT NULL AND profit_margin_score IS NULL LIMIT 100"
+	return dbRead(dbc, cursor, query, None)
+
+
+def getOverallReports(dbc, cursor):
+	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin_score IS NOT NULL AND overall_score IS NULL LIMIT 100"
 	return dbRead(dbc, cursor, query, None)

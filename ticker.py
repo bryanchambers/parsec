@@ -5,5 +5,8 @@ file = requests.get("http://www.nasdaq.com/screening/companies-by-name.aspx?lett
 lines = file.splitlines()
 
 for line in lines:
-	values = line.split(",")
-	print(values[0])
+	data = line.split(",")
+	ticker = data[0].replace('"', '').strip()
+	company = data[1].replace('"', '').strip().lower()
+	print(company)
+	
