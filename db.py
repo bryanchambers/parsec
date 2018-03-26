@@ -557,3 +557,8 @@ def getUnscoredReports(dbc, cursor):
 def getOverallReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin_score IS NOT NULL AND overall_score IS NULL LIMIT 100"
 	return dbRead(dbc, cursor, query, None)
+
+
+def get_companies(dbc, cursor):
+	query = "SELECT * FROM companies"
+	return dbRead(dbc, cursor, query, None)
