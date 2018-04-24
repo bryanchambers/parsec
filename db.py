@@ -50,7 +50,11 @@ def createTable(cursor, table):
 
 	query['companies'] = """CREATE TABLE IF NOT EXISTS companies(
 		cik INT NOT NULL PRIMARY KEY,
-		name VARCHAR(255))"""
+		name VARCHAR(255),
+		ticker VARCHAR(10),
+		pe_ratio SMALLINT,
+		pe_score SMALLINT,
+		value_score SMALLINT)"""
 
 	try: 
 		cursor.execute(query[table])
@@ -448,6 +452,49 @@ def getLastReportYear(dbc, cursor):
 
 
 
+def saveTicker(dbc, cursor, cik, ticker):
+	query = "UPDATE companies SET ticker = %s WHERE cik = " + str(cik) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, (ticker,))
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
+def save_pe(dbc, cursor, cik, pe, score):
+	query = "UPDATE companies SET pe_ratio = %s, pe_score = %s WHERE cik = " + str(cik) + " LIMIT 1"
+
+	try: 
+		cursor.execute(query, (pe, score))
+		dbc.commit()
+		success = True
+		errors  = 'None'
+	except MySQLdb.Error, e:
+		success = False
+		errors  = str(e)
+
+	return {'success': success, 'errors': errors}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -561,4 +608,8 @@ def getOverallReports(dbc, cursor):
 
 def get_companies(dbc, cursor):
 	query = "SELECT * FROM companies"
+	return dbRead(dbc, cursor, query, None)
+
+def get_listed_companies(dbc, cursor):
+	query = "SELECT * FROM companies WHERE ticker IS NOT NULL"
 	return dbRead(dbc, cursor, query, None)

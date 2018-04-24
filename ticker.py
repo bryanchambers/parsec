@@ -2,7 +2,6 @@ import requests
 import db
 import datetime
 import sys
-import difflib
 
 dbc    = db.dbConnect('localhost', 'root', 'atlas', 'parsec')
 cursor = db.getCursor(dbc)
@@ -115,11 +114,11 @@ def common_name_variations(company):
 
 
 
-
+print(datetime.datetime.now())
 
 companies = get_companies()
 tickers   = get_all_tickers(['nyse', 'nasdaq'])
-matched = 0
+matched   = []
 
 for company in companies:
 	 company['diff'] = replace_common_strings(company['name'])
@@ -127,11 +126,12 @@ for company in companies:
 	 for possibility in tickers.keys():
 	 	diff = replace_common_strings(possibility)
 	 	if diff in variations:
- 			print(company['name'])
- 			print(possibility)
- 			print(tickers[possibility])
- 			print('')
-	 		matched += 1
-	 		break
+ 			matched.append({
+ 				'name':   company['name'],
+ 				'ticker': tickers[possibility]
+ 			})
+ 			db.saveTicker(dbc, cursor, company['cik'], str(tickers[possibility]))
+ 			break
 
-print(matched)
+print('Matched ' + str(len(matched)) + ' of ' + str(len(companies)) + ' companies')
+print(datetime.datetime.now())
