@@ -10,9 +10,6 @@ cursor = db.getCursor(dbc)
 
 
 
-
-
-
 def get_tickers(exchange):
 	if exchange in ['nyse', 'nasdaq']:
 		url     = 'http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=' + exchange + '&render=download'
@@ -22,19 +19,19 @@ def get_tickers(exchange):
 		
 		for line in lines:
 			data = line.split(',')
-			ticker  = data[0].replace('"', '').strip()
+			ticker  = data[0].replace('"', '').strip().upper()
 			company = data[1].replace('"', '').strip().lower()
-			if '^' not in ticker:
+			
+			if '.' in ticker:
+				ticker = ticker[:ticker.find('.')]
+			
+			if '^' not in ticker and len(ticker) > 0:
 				if company not in tickers:
-					tickers[company] = ticker
-				else:
-					try:
-						tickers[company].append(ticker)
-					except AttributeError:
-						tickers[company] = [ticker]
+					tickers[company] = str(ticker)
 		return tickers
 	else:
 		return False
+
 
 
 
@@ -54,84 +51,85 @@ def get_all_tickers(exchanges):
 
 
 
-
-def get_companies():
-	companies = db.get_companies(dbc, cursor)
-	if companies['success']:
-		return companies['data']
-	else:
-		return False
-
-
-
-
 def replace_common_strings(name):
-	name = name.replace('the', '')
-	name = name.replace('-', ' ')
-	name = name.replace('&#39;', '')
-	name = name.replace('co.', 'co')
-	name = name.replace('inc.', 'inc')
-	name = name.replace('u.s.a.', 'usa')
-	name = name.replace('u.s. ', 'us ')
-	name = name.replace('?', '')
-	name = name.replace('!', '')
-	name = name.replace(' & ', ' and ')
-	name = name.replace("'", '')
-	name = name.replace('hldgs', 'holdings')
+	replacements = [
+		{'old': 'the',    'new': ''},
+		{'old': '-',      'new': ' '},
+		{'old': '&#39;',  'new': ''},
+		{'old': 'co.',    'new': 'co'},
+		{'old': 'inc.',   'new': 'inc'},
+		{'old': 'u.s.a.', 'new': 'usa'},
+		{'old': 'u.s. ',  'new': 'us '},
+		{'old': '?',      'new': ''},
+		{'old': '!',      'new': ''},
+		{'old': ' & ',    'new': ' and '},
+		{'old': "'",      'new': ''},
+		{'old': 'hldgs',  'new': 'holdings'},
+	]
+	for replacement in replacements:
+		name = name.replace(replacement['old'], replacement['new'])
 	return name
 
 
 
+
+
 def common_name_variations(company):
-	return [
-		company,
-		company + ' inc',
-		company + ' inc.',
-		company + ' corp',
-		company + ' corp.',
-		company + ' group',
-		company + ' limited',
-		company + ' l.p.',
-		company + ' plc',
-		company + ' co',
-		company + ' co.',
-		company + ' lp',
-		company + ' ltd',
-		company + ' ltd.',
-		company + ' llc',
-		company + ' company',
-		company + ' s.a.',
-		company + ' n.v.',
-		company + ' ag',
-		company + ' trust',
-		company + 'oration',
-		company + 'rporation',
-		company + 'mpany',
-		company + '.',
-		company.replace(' com', '.com')
-	]
+	variations = [company]
+	
+	suffixes     = [' inc', ' inc.', ' corp', ' corp.', ' group', ' limited', ' l.p.', ' plc', ' co', ' co.', ' lp', ' ltd', ' ltd.', ' llc', ' company', ' s.a.', ' n.v.', ' ag', ' trust', 'oration', 'rporation', '.']
+	replacements = [{'old': ' com', 'new': '.com'}]
+
+	for suffix in suffixes:
+		variations.append(company + suffix)
+	for replacement in replacements:
+		variations.append(company.replace(replacement['old'], replacement['new']))
+	return variations
 
 
 
 
-print(datetime.datetime.now())
 
-companies = get_companies()
+def estimate_runtime(start, n, total):
+	now     = datetime.datetime.now()
+	elapsed = now - start
+	
+	runtime = (elapsed / n) * (total - n)
+	seconds = runtime.seconds
+	hours   = seconds // 3600
+	minutes = (seconds - (hours * 3600)) // 60
+
+	if hours > 0: 
+		hours_msg = str(hours) + ' hours and '
+	else:
+		hours_msg = ''
+	
+	print('Will be done in about ' + hours_msg + str(minutes) + ' minutes at ' + (now + runtime).strftime('%I:%M%p'))
+
+
+
+
+
+print('\033[2J\033[1;1H')
+print('### PARSEC TICKERS ###')
+
+companies = db.get_companies(dbc, cursor)
 tickers   = get_all_tickers(['nyse', 'nasdaq'])
-matched   = []
 
-for company in companies:
-	 company['diff'] = replace_common_strings(company['name'])
-	 variations = common_name_variations(company['diff'])
-	 for possibility in tickers.keys():
-	 	diff = replace_common_strings(possibility)
-	 	if diff in variations:
- 			matched.append({
- 				'name':   company['name'],
- 				'ticker': tickers[possibility]
- 			})
- 			db.saveTicker(dbc, cursor, company['cik'], str(tickers[possibility]))
- 			break
+if companies['success'] and tickers:
+	print('Found ' + str(len(companies['data'])) + ' companies in db')
+	print('Found ' + str(len(tickers)) + ' possible tickers')
+	start = datetime.datetime.now()
 
-print('Matched ' + str(len(matched)) + ' of ' + str(len(companies)) + ' companies')
-print(datetime.datetime.now())
+	for i, company in enumerate(companies['data']):
+		company['diff'] = replace_common_strings(company['name'])
+		variations      = common_name_variations(company['diff'])
+		
+		for possibility in tickers.keys():
+		 	diff = replace_common_strings(possibility)
+		 	if diff in variations:
+		 		ticker = tickers[possibility]
+	 			db.saveTicker(dbc, cursor, company['cik'], ticker)
+	 			break
+	 	if i in [100, 1000]:
+	 		estimate_runtime(start, i, len(companies['data']))

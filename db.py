@@ -471,38 +471,43 @@ def saveTicker(dbc, cursor, cik, ticker):
 
 
 
-def save_pe(dbc, cursor, cik, pe, score):
-	query = "UPDATE companies SET pe_ratio = %s, pe_score = %s WHERE cik = " + str(cik) + " LIMIT 1"
 
+
+
+
+
+
+
+def db_write(dbc, cursor, query, parameters):
 	try: 
-		cursor.execute(query, (pe, score))
+		cursor.execute(query, parameters)
 		dbc.commit()
-		success = True
-		errors  = 'None'
-	except MySQLdb.Error, e:
-		success = False
-		errors  = str(e)
-
-	return {'success': success, 'errors': errors}
+		return {'success': True}
+	except MySQLdb.Error, errors:
+		return {'success': False, 'errors': str(errors)}
 
 
 
 
+def save_pe(dbc, cursor, cik, pe_ratio, pe_score):
+	query  = "UPDATE companies SET pe_ratio = %s, pe_score = %s WHERE cik = " + str(cik) + " LIMIT 1"
+	params = (pe_ratio, pe_score) 
+	return db_write(dbc, cursor, query, params)
 
 
-
-
-
-
-
-
+def save_final_score(dbc, cursor, cik, health_score, final_score):
+	query  = "UPDATE companies SET health_score = %s, final_score = %s WHERE cik = " + str(cik) + " LIMIT 1"
+	params = (health_score, final_score) 
+	return db_write(dbc, cursor, query, params)
 
 
 
 
 
 
-def dbRead(dbc, cursor, query, parameters):
+
+
+def db_read(dbc, cursor, query, parameters):
 	try: 
 		cursor.execute(query, parameters)
 		dbc.commit()
@@ -519,7 +524,7 @@ def dbRead(dbc, cursor, query, parameters):
 				value = line[i]
 				row[field] = value
 			data.append(row)
-		return {'success': True, 'data': data }
+		return {'success': True, 'data': data}
 
 	except MySQLdb.Error, errors:
 		return {'success': False, 'errors': str(errors)}
@@ -528,7 +533,7 @@ def dbRead(dbc, cursor, query, parameters):
 
 def getReports(dbc, cursor, cik, release_date, n):
 	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' AND success = 1 ORDER BY release_date DESC LIMIT " + str(n)
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 
@@ -548,7 +553,7 @@ def getQuarterDateRange(year, qtr):
 def getCompletedReportList(dbc, cursor, year, qtr):
 	qtrDates   = getQuarterDateRange(year, qtr)
 	query      = "SELECT filename FROM reports WHERE release_date >= '" + qtrDates['start'] + "' AND release_date <= '" + qtrDates['end'] + "'"
-	reports    = dbRead(dbc, cursor, query, None)
+	reports    = db_read(dbc, cursor, query, None)
 
 	if(reports['success']):
 		output = {}
@@ -561,7 +566,7 @@ def getCompletedReportList(dbc, cursor, year, qtr):
 
 def reportExists(dbc, cursor, filename):
 	query   = "SELECT * FROM reports WHERE filename = '" + filename + "'"
-	reports = dbRead(dbc, cursor, query, None)
+	reports = db_read(dbc, cursor, query, None)
 
 	if(reports['success'] and len(reports['data']) > 0):
 		reports['data'] = True
@@ -573,43 +578,48 @@ def reportExists(dbc, cursor, filename):
 
 def getGrowthReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_growth IS NULL ORDER BY release_date DESC LIMIT 10"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 def getGrowthReportsForCalc(dbc, cursor, cik, release_date):
 	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND success = 1 AND profit_margin IS NOT NULL AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' ORDER BY release_date DESC LIMIT 12"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 
 def getAvgReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NOT NULL AND profit_margin_avg IS NULL ORDER BY release_date DESC LIMIT 10"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 def getAvgReportsForCalc(dbc, cursor, cik, release_date):
 	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " AND success = 1 AND profit_margin IS NOT NULL AND release_date <= '" + release_date.strftime('%Y-%m-%d') + "' ORDER BY release_date DESC LIMIT 6"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 def getRatioReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin IS NULL LIMIT 100"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 def getUnscoredReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin_growth IS NOT NULL AND profit_margin_score IS NULL LIMIT 100"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 def getOverallReports(dbc, cursor):
 	query = "SELECT * FROM reports WHERE success = 1 AND profit_margin_score IS NOT NULL AND overall_score IS NULL LIMIT 100"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 
 def get_companies(dbc, cursor):
 	query = "SELECT * FROM companies"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
 
 def get_listed_companies(dbc, cursor):
 	query = "SELECT * FROM companies WHERE ticker IS NOT NULL"
-	return dbRead(dbc, cursor, query, None)
+	return db_read(dbc, cursor, query, None)
+
+
+def get_latest_report(dbc, cursor, cik):
+	query = "SELECT * FROM reports WHERE cik = " + str(cik) + " ORDER BY release_date DESC LIMIT 1"
+	return db_read(dbc, cursor, query, None)

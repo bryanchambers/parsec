@@ -1,0 +1,51 @@
+{
+    "net_income" : [
+        "Net income",
+        "Net loss",
+        "Net income (loss)",
+        "Net (Loss) Income",
+        "NET LOSS"
+    ],
+    "revenue" : [
+        "Revenue",
+        "Revenues",
+        "Sales",
+        "Net sales",
+        "Total revenue",
+        "REVENUE",
+        "Net revenue"
+    ],
+    "total_assets" : [
+        "Total assets",
+        "assets",
+        "TOTAL ASSETS",
+        "Total Assets"
+    ],
+    "total_liabilities" : [
+        "Total liabilities",
+        "liabilities",
+        "TOTAL LIABILITIES",
+        "Total Liabilities"
+    ],
+    "current_assets" : [
+        "Total current assets",
+        "current assets",
+        "TOTAL CURRENT ASSETS",
+        "Total Current Assets"
+    ],
+    "current_liabilities" : [
+        "Total current liabilities",
+        "current liabilities",
+        "TOTAL CURRENT LIABILITIES",
+        "Total Current Liabilities"
+    ],
+    "long_term_assets" : [
+        "long term assets",
+        "long-term assets"
+    ],
+    "long_term_liabilities" : [
+        "long term liabilities",
+        "long-term liabilities",
+        "Total non-current liabilities"
+    ]
+}
