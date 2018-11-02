@@ -4,7 +4,12 @@
         "Net loss",
         "Net income (loss)",
         "Net (Loss) Income",
-        "NET LOSS"
+        "Net (loss) income",
+        "NET LOSS",
+        "Net earnings (loss)",
+        "Net Income",
+        "Net earnings",
+        "Net Income (Loss)"
     ],
     "revenue" : [
         "Revenue",
@@ -12,7 +17,9 @@
         "Sales",
         "Net sales",
         "Total revenue",
+        "Total revenues",
         "REVENUE",
+        "REVENUES",
         "Net revenue"
     ],
     "total_assets" : [
@@ -27,6 +34,20 @@
         "TOTAL LIABILITIES",
         "Total Liabilities"
     ],
+    "total_equity" : [
+        "Total equity",
+        "Total stockholders' equity",
+        "Total stockholders' deficiency",
+        "Total stockholders’ deficit",
+        "Total Stockholders’ Equity (Deficit)"
+    ],
+    "total_liabilities_and_equity" : [
+        "TOTAL LIABILITIES AND EQUITY",
+        "Total liabilities and stockholders' equity",
+        "Total Liabilities and Stockholders' Deficiency",
+        "Total liabilities and stockholders’ equity (deficit)",
+        "Total Liabilities and Stockholders' Equity (Deficit)"
+    ],
     "current_assets" : [
         "Total current assets",
         "current assets",
@@ -38,14 +59,5 @@
         "current liabilities",
         "TOTAL CURRENT LIABILITIES",
         "Total Current Liabilities"
-    ],
-    "long_term_assets" : [
-        "long term assets",
-        "long-term assets"
-    ],
-    "long_term_liabilities" : [
-        "long term liabilities",
-        "long-term liabilities",
-        "Total non-current liabilities"
     ]
 }
