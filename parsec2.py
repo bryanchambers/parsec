@@ -292,4 +292,4 @@ def parse_year(year, triggers):
 
 
 
-parse_year(2018, load_triggers())
+parse_year(2019, load_triggers())
