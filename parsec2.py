@@ -1,17 +1,17 @@
+import multiprocessing
+import os
 import requests
 import json
+import time
 from datetime import datetime
-
-
-
 
 
 
 def get_index(year, qtr):
     base_url = "https://www.sec.gov/Archives/edgar/full-index/"
     full_url = base_url + str(year) + "/QTR" + str(qtr) + "/form.idx"
-
-    return requests.get(full_url).text
+    response = requests.get(full_url)
+    return response.text
 
 
 
@@ -20,6 +20,7 @@ def save_index(year, qtr, index):
 
     with open('index/' + filename, 'w') as file:
         json.dump(index, file)
+        file.close()
 
 
 
@@ -28,7 +29,9 @@ def load_index(year, qtr):
 
     try:
         with open('index/' + filename, 'r') as file:
-            return json.load(file)
+            index = json.load(file)
+            file.close()
+            return index
 
     except FileNotFoundError:
         index = parse_index(get_index(year, qtr))
@@ -58,48 +61,16 @@ def parse_index(data):
 
 
 
-
 def get_report(filename):
     return requests.get('https://www.sec.gov/Archives/' + filename).text
 
 
 
-
-
-def save_report(info, report):
-    name = info['name']
-    
-    for char in ['.', '/', '-', ',', '&', '(', ')']:
-        name = name.replace(char, '')
-
-    filename = name.lower().replace(' ', '-') + '-' + info['date'] + '.html'
-
-    a = report.find('<html>')
-    b = report.find('<HTML>')
-
-    if   a > -1 and b > -1: i = min(a, b)
-    elif a > -1 or  b > -1: i = a if a > -1 else b
-    else: i = False
-
-    opening_tag = report[i:i + 6] if i else False
-    closing_tag = '</html>' if opening_tag == '<html>' else '</HTML>'
-
-    j = report.find(closing_tag, i) if i else False
-
-    if i and j:
-        with open('reports/html/' + filename, 'w') as file:
-            file.write(report[i:j + 7])
-
-
-
-
-
-
 def load_triggers():
     with open('triggers.json') as file:
-        return json.load(file)
-
-
+        triggers = json.load(file)
+        file.close()
+        return triggers
 
 
 
@@ -118,8 +89,6 @@ def get_snippet(page, trigger, start):
 
 
 
-
-
 def extra_text_before(snip):
     j = snip.rfind('>')
 
@@ -129,8 +98,6 @@ def extra_text_before(snip):
     if text:
         text = remove_whitespace(text)
     return True if text else False
-
-
 
 
 
@@ -146,16 +113,12 @@ def extra_text_after(snip):
 
 
 
-
-
 def remove_whitespace(text):
     text = ''.join(text.split())
 
     for char in ['&nbsp;', '&#160;']:
         text.replace(char, '')
     return text
-
-
 
 
 
@@ -198,8 +161,6 @@ def parse_value(snip, year):
 
 
 
-
-
 def parse_metric(page, triggers, year):
     for trigger in triggers:
         start = 0
@@ -218,10 +179,9 @@ def parse_metric(page, triggers, year):
 
 
 
-
-
 def report_is_valid(results):
     r = results
+    if not r: return False
 
     if (r['revenue']
         and r['net_income']
@@ -238,20 +198,16 @@ def report_is_valid(results):
 
 
 
-
-
-
-def calc_ratios(data):
+def get_ratios(data):
     equity = data['total_equity'] if data['total_equity'] else data['total_assets'] - data['total_liabilities']
-
     total_liabilities = data['total_liabilities'] if data['total_liabilities'] else data['total_liabilities_and_equity'] - equity
 
     output = {
-        'profit_margin':    float(data['net_income'])     / data['revenue'],
-        'return_on_equity': float(data['net_income'])     / equity,
-        'debt_coverage':    float(data['net_income'])     / data['current_liabilities'],
-        'current_leverage': float(data['current_assets']) / data['current_liabilities'],
-        'total_leverage':   float(data['total_assets'])   / total_liabilities
+        'profit_margin':    calc_ratio(data['net_income'], data['revenue']),
+        'return_on_equity': calc_ratio(data['net_income'], equity),
+        'debt_coverage':    calc_ratio(data['net_income'], data['current_liabilities']),
+        'current_leverage': calc_ratio(data['current_assets'], data['current_liabilities']),
+        'total_leverage':   calc_ratio(data['total_assets'], total_liabilities)
     }
 
     for metric in output:
@@ -261,32 +217,79 @@ def calc_ratios(data):
 
 
 
+def calc_ratio(n, d):
+    max = 1000
+    
+    if d == 0:
+        return max if n > 0 else 0
+    else:
+        ratio = float(n) / d
+        if   ratio < 0:   return 0
+        elif ratio > max: return max
+        else: return round(ratio, 5)
 
 
 
+def parse_report(cik, info, triggers, year):
+    report = get_report(info['file'])
+
+    results = {}
+    for metric in triggers:
+        results[metric] = parse_metric(report, triggers[metric], year)
+
+    filename = 'results-' + str(cik) + '-' + info['date'] + '.json'
+
+    with open('results/' + filename, 'w') as file:
+        json.dump(results, file)
+        file.close()
 
 
 
+def load_results(cik, date):
+    filename = 'results-' + str(cik) + '-' + date + '.json'
 
-yr = 2018
-triggers = load_triggers()
-index = load_index(yr, 2)
+    for i in range(10):
+        try:
+            with open('results/' + filename, 'r') as file:
+                results = json.load(file)
+                file.close()
+                os.remove('results/' + filename)
+                return results
+
+        except FileNotFoundError: pass
+        time.sleep(0.01)
+    
+    return False
 
 
-for cik in index:
-    if 'metrics' not in index[cik]:
-        report = get_report(index[cik]['file'])
-        name   = index[cik]['name']
-        date   = index[cik]['date']
 
-        results = {}
-        for metric in triggers:
-            results[metric] = parse_metric(report, triggers[metric], yr)
+def parse_quarter(year, qtr, triggers):
+    index = load_index(year, qtr)
 
-        if report_is_valid(results):
-            index[cik]['metrics'] = results
-            index[cik]['ratios']  = calc_ratios(results)
-        else:
-            index[cik]['metrics'] = False
+    for cik in index:
+        if 'metrics' not in index[cik]:
+            parse = multiprocessing.Process(target=parse_report, args=(cik, index[cik], triggers, year))
+            parse.start()
+            parse.join()
 
-save_index(yr, 2, index)
+            results = load_results(cik, index[cik]['date'])
+
+            if report_is_valid(results):
+                index[cik]['metrics'] = results
+                index[cik]['ratios']  = get_ratios(results)
+            else:
+                index[cik]['metrics'] = False
+
+    save_index(year, qtr, index)
+
+
+
+def parse_year(year, triggers):
+    for qtr in range(4):
+        parse = multiprocessing.Process(target=parse_quarter, args=(year, qtr + 1, triggers))
+        parse.start()
+        parse.join()
+
+
+
+parse_year(2018, load_triggers())

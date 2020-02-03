@@ -39,14 +39,18 @@
         "Total stockholders' equity",
         "Total stockholders' deficiency",
         "Total stockholders’ deficit",
-        "Total Stockholders’ Equity (Deficit)"
+        "Total Stockholders’ Equity (Deficit)",
+        "Total Shareholders' Equity",
+        "TOTAL STOCKHOLDERS’ DEFICIT"
     ],
     "total_liabilities_and_equity" : [
         "TOTAL LIABILITIES AND EQUITY",
         "Total liabilities and stockholders' equity",
         "Total Liabilities and Stockholders' Deficiency",
         "Total liabilities and stockholders’ equity (deficit)",
-        "Total Liabilities and Stockholders' Equity (Deficit)"
+        "Total Liabilities and Stockholders' Equity (Deficit)",
+        "TOTAL LIABILITIES AND SHAREHOLDERS' EQUITY",
+        "TOTAL LIABILITIES AND STOCKHOLDERS’ DEFICIT"
     ],
     "current_assets" : [
         "Total current assets",
