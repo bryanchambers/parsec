@@ -5,8 +5,6 @@ import csv
 
 
 
-
-
 def parse_csv_value(line):
     i = line.find('"')
     text = line[i + 1:]
@@ -16,7 +14,6 @@ def parse_csv_value(line):
 
     remaining = text[j + 1:]
     return value, remaining
-
 
 
 
@@ -40,13 +37,6 @@ def get_tickers():
     with open('info/tickers.json', 'w') as file:
         json.dump(tickers, file)
         file.close()
-
-
-
-
-
-
-
 
 
 
@@ -94,10 +84,6 @@ def get_name_variations(n):
 
 
 
-
-
-
-
 def parse_tickers():
     with open('info/tickers.json', 'r') as file:
         tickers = json.load(file)
@@ -122,6 +108,4 @@ def parse_tickers():
 
 
 get_tickers()
-print('Downloaded tickers')
 parse_tickers()
-print('Added tickers to company list')

@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 
-
 def reorg_reports():
     reports = {}
 
@@ -46,9 +45,6 @@ def reorg_reports():
 
 
 
-
-
-
 def get_companies():
     companies = {}
 
@@ -74,9 +70,6 @@ def get_companies():
 
 
 
-
-
-
 def prep_data(reports, data_type, name, length, cutoff):
     data = {}
     if name not in reports[0][data_type]: return False
@@ -99,7 +92,6 @@ def prep_data(reports, data_type, name, length, cutoff):
 
 
 
-
 def avg(data, set):
     s = 0
     n = 0
@@ -109,7 +101,6 @@ def avg(data, set):
         n = n + 1
     
     return float(s) / n
-
 
 
 
@@ -141,7 +132,6 @@ def get_adj_avg(input_data):
 
 
 
-
 def covariance(data, x_avg, y_avg):
     s = 0
 
@@ -162,7 +152,6 @@ def variance(data, x_avg):
         s = s + v ** 2
     
     return s
-
 
 
 
@@ -212,8 +201,6 @@ def get_trend(input_data):
 
 
 
-
-
 def load_reports():
     reports = {}
 
@@ -225,7 +212,6 @@ def load_reports():
             file.close()
 
     return reports
-
 
 
 
@@ -241,9 +227,6 @@ def add_special_metrics(metrics):
 
 
 
-
-
-
 def get_reports_by_date(reports):
     output = []
     
@@ -255,8 +238,6 @@ def get_reports_by_date(reports):
 
     output.sort(key = lambda x: x['date'], reverse=True)
     return output
-
-
 
 
 
@@ -288,8 +269,6 @@ def get_raw_scores(reports):
 
 
 
-
-
 def save_raw_scores(reports):
     scores = {}
 
@@ -300,11 +279,6 @@ def save_raw_scores(reports):
     with open('scores/raw-scores.json', 'w') as file:
         json.dump(scores, file)
         file.close()
-
-
-
-
-
 
 
 
@@ -335,11 +309,6 @@ def minify_raw_scores():
 
 
 
-
-
-
-
-
 def get_limit(scores):
     scores = list(map(lambda x: x if x > 0 else 0, scores))
 
@@ -352,10 +321,6 @@ def get_limit(scores):
 
 
 
-
-
-
-
 def normalize(value, limit):
     if (not value) or (not limit): return False
 
@@ -364,7 +329,6 @@ def normalize(value, limit):
     if norm < 0:   norm = 0
     if norm > 100: norm = 100
     return norm
-
 
 
 
@@ -386,7 +350,6 @@ def save_score_limits():
     with open('scores/score-limits.json', 'w') as file:
         json.dump(limits, file)
         file.close()
-
 
 
 
@@ -483,7 +446,6 @@ def get_weight(data_type, score):
 
 
 
-
 def get_value_scores():
     with open('scores/normalized-scores.json', 'r') as file:
         scores = json.load(file)
@@ -511,139 +473,13 @@ def get_value_scores():
 
 
 
-
-def recommend():
-    with open('scores/value-scores.json', 'r') as file:
-        scores = json.load(file)
-        file.close()
-
-    score_list = []
-
-    for cik in scores:
-        score_list.append({ 'cik': cik, 'score': scores[cik] })
-
-    score_list.sort(key = lambda x: x['score'], reverse=True)
-    
-    for x in score_list[:1000]:
-        print(str(x['cik']).rjust(8) + ' : ' + str(round(x['score'], 1)))
-    
-    cik = score_list[0]['cik']
-    print_report_data(cik)
-    print_scores('raw-scores', cik)
-    print_scores('normalized-scores', cik)
-
-
-
-
-
-
-def print_report_data(cik):
-    print('\nCIK: ' + str(cik))
-
-    with open('reports/reports-1494162.json', 'r') as file:
-        reports = json.load(file)
-        file.close()
-
-    reports_by_date = get_reports_by_date(reports)
-
-    header = '|    date    | '
-    for metric in reports_by_date[0]['metrics']:
-        header = header + metric.replace('_', '')[:9].rjust(9) + ' | '
-
-    for ratio in reports_by_date[0]['ratios']:
-        header = header + ratio.replace('_', '')[:9].rjust(9) + ' | '
-
-    print('-' * 194)
-    print(header)
-    print('-' * 194)
-
-    for report in reports_by_date:
-        out = '| ' + report['date'].strftime('%Y-%m-%d') + ' | '
-
-        for metric in report['metrics']:
-            out = out + str(report['metrics'][metric]).rjust(9) + ' | '
-
-        for ratio in report['ratios']:
-            out = out + str(report['ratios'][ratio]).rjust(9) + ' | '
-        
-        print(out)
-
-    print('-' * 194)
-
-
-def print_scores(filename, cik):
-    with open('scores/' + filename + '.json', 'r') as file:
-        scores = json.load(file)
-        file.close()
-
-    print('')
-
-    len_trend = 0
-    for metric in scores[cik]:
-        val = scores[cik][metric]['trend']
-        txt = str(round(val, 2))
-        if len(txt) > len_trend: len_trend = len(txt)
-
-    len_avg = 0
-    for metric in scores[cik]:
-        val = scores[cik][metric]['avg'] if 'avg' in scores[cik][metric] else 0
-        txt = str(round(val, 2))
-        if len(txt) > len_avg: len_avg = len(txt)
-    
-    if len_trend < 5: len_trend = 5
-    if len_avg   < 5: len_avg   = 5
-
-    print('-' * (28 + len_trend + len_avg))
-    print('metric'.rjust(20) + ' | ' + 'trend'.rjust(len_trend) + ' | ' + 'avg'.rjust(len_avg) + ' |')
-    print('-' * (28 + len_trend + len_avg))
-
-    for metric in scores[cik]:
-        out   = metric.rjust(20) + ' | '
-        score = scores[cik][metric]
-
-        out = out + str(round(score['trend'], 2)).rjust(len_trend) if 'trend' in score else out + ' ' * len_trend
-        out = out + ' | '
-        
-        out = out + str(round(score['avg'], 2)).rjust(len_avg) if 'avg' in score else out + ' ' * len_avg
-        out = out + ' |'
-        
-        print(out)
-    
-    print('-' * (28 + len_trend + len_avg))
-    print('')
-
-
-
-
-
 reorg_reports()
-print('Reported reorganized')
 get_companies()
-print('Saved company list')
 
 reports = load_reports()
 save_raw_scores(reports)
-print('Saved raw scores')
 
 minify_raw_scores()
-print('Minified scores')
-
 save_score_limits()
-print('Saved score limits')
-
 normalize_scores()
-print('Normalized scores')
-
 get_value_scores()
-print('Saved value scores')
-
-#recommend()
-
-
-
-# with open('index/companies.json', 'r') as file:
-#     companies = json.load(file)
-#     file.close()
-
-# for cik in companies:
-#     print(companies[cik]['name'])

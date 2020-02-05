@@ -2,6 +2,8 @@ import requests
 import datetime
 import json
 
+
+
 def get_pe_batch(ticker_batch):
     base_url = 'https://api.iextrading.com/1.0/stock/market/batch?symbols='
     tickers  = ','.join(ticker_batch)
@@ -17,7 +19,6 @@ def get_pe_batch(ticker_batch):
             if pe and pe > 0: out[ticker] = quote['peRatio']
 
     return out
-
 
 
 
@@ -38,7 +39,6 @@ def get_ticker_batches():
                 batch = []
 
     return out
-
 
 
 
@@ -64,8 +64,6 @@ def get_pe_ratios():
 
 
 
-
-
 def get_pe_score(pe):
     min = 1
     max = 50
@@ -80,45 +78,4 @@ def get_pe_score(pe):
 
 
 
-#get_pe_ratios()
-#print('Downloaded and saved pe ratios')
-
-
-with open('info/companies.json', 'r') as file:
-    companies = json.load(file)
-    file.close()
-
-with open('scores/value-scores.json', 'r') as file:
-    value_scores = json.load(file)
-    file.close()
-
-final_scores = []
-
-for cik in value_scores:
-    value_score = value_scores[cik]
-
-    if 'pe' in companies[cik]:
-        pe_score = get_pe_score(companies[cik]['pe'])
-        
-        if pe_score > 0 and pe_score < 100:
-            final_score = (value_score + pe_score) / 2
-
-            name   = companies[cik]['name']
-            ticker = companies[cik]['ticker']
-
-            final_scores.append({ 'name': name, 'ticker': ticker, 'score': final_score })
-
-final_scores.sort(key = lambda x: x['score'], reverse=True)
-
-print('')
-print('-' * 49)
-
-for score in final_scores:
-    out = '| '
-    out = out + score['ticker'].rjust(5) + ' | '
-    out = out + score['name'][:30].ljust(30)  + ' | '
-    out = out + str(round(score['score'], 1)) + ' |'
-
-    print(out)
-
-print('-' * 49)
+get_pe_ratios()

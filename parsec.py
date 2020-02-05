@@ -62,7 +62,9 @@ def parse_index(data):
 
 
 def get_report(filename):
-    return requests.get('https://www.sec.gov/Archives/' + filename).text
+    try: return requests.get('https://www.sec.gov/Archives/' + filename).text
+    except MemoryError:
+        print('Report too big [' + filename + ']')
 
 
 
@@ -265,14 +267,19 @@ def load_results(cik, date):
 
 def parse_quarter(year, qtr, triggers):
     index = load_index(year, qtr)
+    total = len(index)
+
+    parsed = 0
 
     for cik in index:
+        update_status(year, qtr, parsed, total)
         if 'metrics' not in index[cik]:
             parse = multiprocessing.Process(target=parse_report, args=(cik, index[cik], triggers, year))
             parse.start()
             parse.join()
 
             results = load_results(cik, index[cik]['date'])
+            parsed  = parsed + 1
 
             if report_is_valid(results):
                 index[cik]['metrics'] = results
@@ -292,4 +299,14 @@ def parse_year(year, triggers):
 
 
 
-parse_year(2019, load_triggers())
+def update_status(year, qtr, parsed, total):
+    timestamp = datetime.strftime(datetime.now(), '%d %b %I:%M%p')
+    fraction  = ' ' + str(parsed) + '/' + str(total)
+    percent   = ' (' + str(round((parsed / total) * 100, 1)) + '%)'
+
+    with open('status.txt', 'w') as file:
+        file.write('[' + timestamp + '] ' + str(year) + 'q' + str(qtr) + ' Parsed' + fraction + percent + '\n')
+
+
+
+parse_year(2020, load_triggers())
