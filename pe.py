@@ -4,10 +4,21 @@ import json
 
 
 
+def get_api_info():
+    with open('iex.json', 'r') as file:
+        api = json.load(file)
+
+    return api
+
+
+
 def get_pe_batch(ticker_batch):
-    base_url = 'https://api.iextrading.com/1.0/stock/market/batch?symbols='
+    base_url = api['base'] + '?symbols='
     tickers  = ','.join(ticker_batch)
-    quotes   = requests.get(base_url + tickers + '&types=quote').json()
+    types    = '&types=quote'
+    token    = '&token=' + api['token']
+    response = requests.get(base_url + tickers + types + token)
+    quotes   = response.json()
 
     out = {}
 
@@ -63,19 +74,5 @@ def get_pe_ratios():
         file.close()
 
 
-
-def get_pe_score(pe):
-    min = 1
-    max = 50
-    rng = max - min
-
-    if pe < min: pe = min
-    if pe > max: pe = max
-
-    pe_frac = (pe - min) / rng
-
-    return 100 - pe_frac * 100
-
-
-
+api = get_api_info()
 get_pe_ratios()

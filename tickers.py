@@ -1,7 +1,45 @@
-import json
-import requests
-import difflib
-import csv
+import json, requests, difflib, csv, smtplib, ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text      import MIMEText
+
+
+
+def load_json_file(filename):
+    with open(filename + '.json', 'r') as file:
+        return json.load(file)
+
+
+
+def save_json_file(filename, data):
+    with open(filename + '.json', 'w') as file:
+        json.dump(data, file)
+
+
+
+def email(to, subject, body):
+    ses = load_json_file('ses')
+    msg = create_email(to, subject, body, ses)
+    send_email(to, msg, ses)
+
+
+
+def create_email(to, subject, body, ses):
+    msg = MIMEMultipart()
+    msg['From']    = ses['sender']
+    msg['To']      = to
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+    return msg.as_string()
+
+
+
+def send_email(to, msg, ses):
+    smtp = smtplib.SMTP(ses['endpoint'], 587)
+    smtp.starttls()
+    smtp.login(ses['username'], ses['password'])
+    smtp.sendmail(ses['sender'], to, msg)
+    smtp.quit()
 
 
 
@@ -21,22 +59,21 @@ def get_tickers():
     tickers = {}
 
     for exchange in ['nyse', 'nasdaq']:
-        url     = 'http://www.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=' + exchange + '&render=download'
-        file    = requests.get(url).text
-        lines   = file.splitlines()
+        url   = 'http://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=' + exchange + '&render=download'
+        res   = requests.get(url)
+        file  = res.text
+        lines = file.splitlines()
 
         for line in lines:
             ticker,  remaining = parse_csv_value(line)
             company, remaining = parse_csv_value(remaining)
-
             company = company.lower()
 
-            if company not in tickers:
-                tickers[company] = ticker.upper()
+            if len(company) < 200 and len(ticker) < 20:
+                if company not in tickers:
+                    tickers[company] = ticker.upper()
 
-    with open('info/tickers.json', 'w') as file:
-        json.dump(tickers, file)
-        file.close()
+    save_json_file('info/tickers', tickers)
 
 
 
@@ -52,9 +89,9 @@ def get_name_variations(n):
         'co':   'company',
         'corp': 'corporation',
         'ltd':  'limited',
-        'llc': None,
-        'lp':  None,
-        'nv':  None
+        'llc':   None,
+        'lp':    None,
+        'nv':    None
     }
 
     for a in abv:
@@ -85,25 +122,37 @@ def get_name_variations(n):
 
 
 def parse_tickers():
-    with open('info/tickers.json', 'r') as file:
-        tickers = json.load(file)
-        file.close()
+    tickers   = load_json_file('info/tickers')
+    companies = load_json_file('info/companies')
 
-    with open('info/companies.json', 'r') as file:
-        companies = json.load(file)
-        file.close()
+    m = 0 # Matches
+    n = 0 # New company or ticker
+    c = 0 # Ticker changed
 
     for cik in companies:
         name = companies[cik]['name'].lower()
 
         for variation in get_name_variations(name):
             if variation in tickers:
-                companies[cik]['ticker'] = tickers[variation].upper()
-                break
+                m = m + 1
+                ticker = tickers[variation].upper()
 
-    with open('info/companies.json', 'w') as file:
-        json.dump(companies, file)
-        file.close()
+                if 'ticker' not in companies[cik]: n = n + 1
+                if 'ticker' in companies[cik] and companies[cik]['ticker'] != ticker: c = c + 1
+                companies[cik]['ticker'] = ticker
+                break
+    
+    save_json_file('info/companies', companies)
+    send_results(len(companies), m, n, c)
+
+
+
+def send_results(total, matches, new, changes):
+    subject = 'Parsec Tickers Updated'
+    percent = round((matches / float(total)) * 100, 1)
+
+    msg = str(new) + ' New, ' + str(changes) + ' Changes, ' + str(matches) + '/' + str(total) + ' Matched (' + str(percent) + '%)'
+    email('bryches@gmail.com', subject, msg)
 
 
 

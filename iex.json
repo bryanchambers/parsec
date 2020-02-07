@@ -1,0 +1,4 @@
+{
+    "base": "https://cloud.iexapis.com/stable/stock/market/batch",
+    "token": "sk_f8632ee3c4aa4ed1bb2c55dea586db92"
+}
