@@ -143,7 +143,7 @@ def parse_tickers():
                 break
     
     save_json_file('info/companies', companies)
-    send_results(len(companies), m, n, c)
+    send_results(len(tickers), m, n, c)
 
 
 
