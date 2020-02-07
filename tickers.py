@@ -1,17 +1,22 @@
-import json, requests, difflib, csv, smtplib, ssl
+import json, requests, difflib, csv, smtplib, ssl, pathlib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text      import MIMEText
 
 
 
+def get_path():
+    return str(pathlib.Path(__file__).parent.absolute()) + '/'
+
+
+
 def load_json_file(filename):
-    with open(filename + '.json', 'r') as file:
+    with open(get_path() + filename + '.json', 'r') as file:
         return json.load(file)
 
 
 
 def save_json_file(filename, data):
-    with open(filename + '.json', 'w') as file:
+    with open(get_path() + filename + '.json', 'w') as file:
         json.dump(data, file)
 
 
