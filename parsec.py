@@ -358,7 +358,6 @@ def get_current_quarter():
 def get_quarters():
     year = datetime.now().year
     qtr  = get_current_quarter()
-
     qtrs = [{ 'year': year, 'qtr': qtr }]
 
     qtrs.append({
@@ -366,11 +365,16 @@ def get_quarters():
         'qtr':  qtr - 1 if qtr > 1 else 4
     })
 
+    qtrs.reverse()
     return qtrs
 
 
 
-triggers = load_triggers()
+try:
+    triggers = load_triggers()
 
-for qtr in get_quarters():
-    parse_quarter(qtr['year'], qtr['qtr'], triggers)
+    for qtr in get_quarters():
+        parse_quarter(qtr['year'], qtr['qtr'], triggers)
+
+except Exception as error:
+    email('bryches@gmail.com', 'Parsec Error', repr(error))
