@@ -1,9 +1,45 @@
-import multiprocessing
-import os
-import requests
-import json
-import time
+import multiprocessing, os, requests, json, time, pathlib, smtplib
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text      import MIMEText
+
+
+
+def get_path():
+    return str(pathlib.Path(__file__).parent.absolute()) + '/'
+
+
+
+def load_json_file(filename):
+    with open(get_path() + filename + '.json', 'r') as file:
+        return json.load(file)
+
+
+
+def email(to, subject, body):
+    ses = load_json_file('ses')
+    msg = create_email(to, subject, body, ses)
+    send_email(to, msg, ses)
+
+
+
+def create_email(to, subject, body, ses):
+    msg = MIMEMultipart()
+    msg['From']    = ses['sender']
+    msg['To']      = to
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+    return msg.as_string()
+
+
+
+def send_email(to, msg, ses):
+    smtp = smtplib.SMTP(ses['endpoint'], 587)
+    smtp.starttls()
+    smtp.login(ses['username'], ses['password'])
+    smtp.sendmail(ses['sender'], to, msg)
+    smtp.quit()
 
 
 
@@ -18,9 +54,8 @@ def get_index(year, qtr):
 def save_index(year, qtr, index):
     filename = 'index-' + str(year) + 'q' + str(qtr) + '.json'
 
-    with open('index/' + filename, 'w') as file:
+    with open(get_path() + 'index/' + filename, 'w') as file:
         json.dump(index, file)
-        file.close()
 
 
 
@@ -28,9 +63,8 @@ def load_index(year, qtr):
     filename = 'index-' + str(year) + 'q' + str(qtr) + '.json'
 
     try:
-        with open('index/' + filename, 'r') as file:
+        with open(get_path() + 'index/' + filename, 'r') as file:
             index = json.load(file)
-            file.close()
             return index
 
     except FileNotFoundError:
@@ -61,6 +95,18 @@ def parse_index(data):
 
 
 
+def update_index(year, qtr):
+    old = load_index(year, qtr)
+    new = parse_index(get_index(year, qtr))
+
+    for cik in new:
+        if cik not in old:
+            old[cik] = new[cik]
+
+    save_index(year, qtr, old)
+
+
+
 def get_report(filename):
     try: return requests.get('https://www.sec.gov/Archives/' + filename).text
     except MemoryError:
@@ -69,9 +115,8 @@ def get_report(filename):
 
 
 def load_triggers():
-    with open('triggers.json') as file:
+    with open(get_path() + 'triggers.json') as file:
         triggers = json.load(file)
-        file.close()
         return triggers
 
 
@@ -241,72 +286,91 @@ def parse_report(cik, info, triggers, year):
 
     filename = 'results-' + str(cik) + '-' + info['date'] + '.json'
 
-    with open('results/' + filename, 'w') as file:
+    with open(get_path() + 'results/' + filename, 'w') as file:
         json.dump(results, file)
-        file.close()
 
 
 
 def load_results(cik, date):
     filename = 'results-' + str(cik) + '-' + date + '.json'
 
-    for i in range(10):
+    for _ in range(10):
         try:
-            with open('results/' + filename, 'r') as file:
+            with open(get_path() + 'results/' + filename, 'r') as file:
                 results = json.load(file)
                 file.close()
                 os.remove('results/' + filename)
                 return results
 
         except FileNotFoundError: pass
-        time.sleep(0.01)
-    
+        #time.sleep(0.01)
+
     return False
 
 
 
 def parse_quarter(year, qtr, triggers):
+    update_index(year, qtr)
     index = load_index(year, qtr)
-    total = len(index)
 
-    parsed = 0
+    s = 0 # Success
+    f = 0 # Fail
 
     for cik in index:
-        update_status(year, qtr, parsed, total)
         if 'metrics' not in index[cik]:
             parse = multiprocessing.Process(target=parse_report, args=(cik, index[cik], triggers, year))
             parse.start()
             parse.join()
 
             results = load_results(cik, index[cik]['date'])
-            parsed  = parsed + 1
 
             if report_is_valid(results):
                 index[cik]['metrics'] = results
                 index[cik]['ratios']  = get_ratios(results)
+                s = s + 1
             else:
                 index[cik]['metrics'] = False
+                f = f + 1
 
     save_index(year, qtr, index)
+    send_results(year, qtr, s, f)
 
 
 
-def parse_year(year, triggers):
-    for qtr in range(4):
-        parse = multiprocessing.Process(target=parse_quarter, args=(year, qtr + 1, triggers))
-        parse.start()
-        parse.join()
+def send_results(year, qtr, s, f):
+    subject = 'Parsec Reports Updated'
+
+    msg = str(year) + ' Q' + str(qtr) + ': ' + str(s) + ' Successful, ' + str(f) + ' Failed'
+    email('bryches@gmail.com', subject, msg)
 
 
 
-def update_status(year, qtr, parsed, total):
-    timestamp = datetime.strftime(datetime.now(), '%d %b %I:%M%p')
-    fraction  = ' ' + str(parsed) + '/' + str(total)
-    percent   = ' (' + str(round((parsed / total) * 100, 1)) + '%)'
+def get_current_quarter():
+    month = datetime.now().month
 
-    with open('status.txt', 'w') as file:
-        file.write('[' + timestamp + '] ' + str(year) + 'q' + str(qtr) + ' Parsed' + fraction + percent + '\n')
+    if   month <  4: return 1
+    elif month <  7: return 2
+    elif month < 10: return 3
+    else: return 4
 
 
 
-parse_year(2020, load_triggers())
+def get_quarters():
+    year = datetime.now().year
+    qtr  = get_current_quarter()
+
+    qtrs = [{ 'year': year, 'qtr': qtr }]
+
+    qtrs.append({
+        'year': year    if qtr > 1 else year - 1,
+        'qtr':  qtr - 1 if qtr > 1 else 4
+    })
+
+    return qtrs
+
+
+
+triggers = load_triggers()
+
+for qtr in get_quarters():
+    parse_quarter(qtr['year'], qtr['qtr'], triggers)
