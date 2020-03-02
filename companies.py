@@ -1,5 +1,6 @@
 import json, pathlib
-from notify import email
+from datetime   import datetime
+from notify     import email
 
 
 
@@ -20,13 +21,19 @@ def save_json_file(filename, data):
 
 
 
+def get_current_year():
+    now = datetime.now()
+    return now.year
+
+
+
 def update_companies():
     try: companies = load_json_file('info/companies')
     except FileNotFoundError: companies = {}
 
     n = 0
 
-    for year in range(2010, 2020):
+    for year in range(2000, get_current_year()):
         for qtr in range(1, 5):
             filename = 'index-' + str(year) + 'q' + str(qtr)
 
@@ -40,7 +47,7 @@ def update_companies():
                         companies[cik] = { 'name': index[cik]['name'] } 
 
     save_json_file('info/companies', companies)
-    send_results(n)
+    return n
 
 
 
@@ -52,4 +59,5 @@ def send_results(n):
 
 
 
-update_companies()
+n = update_companies()
+send_results(n)

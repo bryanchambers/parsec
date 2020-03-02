@@ -4,72 +4,6 @@ from datetime import datetime
 
 
 
-def reorg_reports():
-    reports = {}
-
-    for year in range(2010, 2020):
-        for qtr in range(1, 5):
-            filename = 'index-' + str(year) + 'q' + str(qtr) + '.json'
-
-            try:
-                with open('index/' + filename, 'r') as file:
-                    index = json.load(file)
-                    file.close()
-
-            except FileNotFoundError: index = False
-
-            if index:
-                for cik in index:
-                    date = index[cik]['date']
-
-                    if 'ratios' in index[cik] and index[cik]['ratios']:
-                        if cik not in reports:
-                            filename = 'reports-' + str(cik) + '.json'
-                            
-                            try:
-                                with open('reports/' + filename, 'r') as file:
-                                    reports[cik] = json.load(file)
-                                    file.close()
-                            
-                            except FileNotFoundError: reports[cik] = {}
-
-                        reports[cik][date] = { 'metrics': add_special_metrics(index[cik]['metrics']), 'ratios': index[cik]['ratios'] }
-
-
-    for cik in reports:
-        filename = 'reports-' + str(cik) + '.json'
-
-        with open('reports/' + filename, 'w') as file:
-            json.dump(reports[cik], file)
-            file.close()
-
-
-
-def get_companies():
-    companies = {}
-
-    for year in range(2010, 2020):
-        for qtr in range(1, 5):
-            filename = 'index-' + str(year) + 'q' + str(qtr) + '.json'
-
-            try:
-                with open('index/' + filename, 'r') as file:
-                    index = json.load(file)
-                    file.close()
-
-            except FileNotFoundError: index = False
-
-            if index:
-                for cik in index:
-                    if cik not in companies:
-                        companies[cik] = { 'name': index[cik]['name'] } 
-
-    with open('info/companies.json', 'w') as file:
-        json.dump(companies, file)
-        file.close()
-
-
-
 def prep_data(reports, data_type, name, length, cutoff):
     data = {}
     if name not in reports[0][data_type]: return False
@@ -213,17 +147,6 @@ def load_reports():
 
     return reports
 
-
-
-def add_special_metrics(metrics):
-    tot_equity = metrics['total_equity']
-    tot_assets = metrics['total_assets']
-    cur_assets = metrics['current_assets']
-    tot_liabilities = metrics['total_liabilities']
-
-    metrics['equity'] =  tot_equity if tot_equity else tot_assets - tot_liabilities
-    metrics['long_term_assets'] = tot_assets - cur_assets
-    return metrics
 
 
 
@@ -472,9 +395,6 @@ def get_value_scores():
         file.close()
 
 
-
-reorg_reports()
-get_companies()
 
 reports = load_reports()
 save_raw_scores(reports)
