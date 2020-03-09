@@ -50,10 +50,7 @@ def get_reports_by_cik():
 
                     if 'ratios' in index[cik] and index[cik]['ratios']:
                         if cik not in reports:
-                            filename = 'reports-' + str(cik)
-
-                            try: reports[cik] = load_json_file('reports/' + filename)
-                            except FileNotFoundError: reports[cik] = {}
+                            reports[cik] = {}
 
                         reports[cik][date] = {
                             'metrics': add_special_metrics(index[cik]['metrics']),
