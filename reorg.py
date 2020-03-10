@@ -28,7 +28,7 @@ def get_current_year():
 
 
 def add_special_metrics(m):
-    m['equity'] =  m['total_equity'] if m['total_equity'] else m['total_assets'] - m['total_liabilities']
+    m['equity'] = m['total_equity'] if m['total_equity'] else m['total_assets'] - m['total_liabilities']
     m['long_term_assets'] = m['total_assets'] - m['current_assets']
     return m
 
@@ -62,7 +62,8 @@ def get_reports_by_cik():
 
 
 def save_reports_by_cik(reports):
-    n = 0
+    n = 0 # New reports added
+    c = 0 # Existing reports changed
 
     for cik in reports:
         filename = 'reports-' + str(cik)
@@ -75,19 +76,41 @@ def save_reports_by_cik(reports):
                 company[date] = reports[cik][date]
                 n = n + 1
 
+            elif not reports_match(company[date], reports[cik][date]):
+                company[date] = reports[cik][date]
+                c = c + 1
+
         save_json_file('reports/' + filename, company)
 
-    return n
+    return n, c
 
 
 
-def send_results(n):
+def reports_match(old, new):
+    if not old['metrics'] and not new['metrics']:
+        return True
+
+    for metric in old['metrics']:
+        if metric not in ['equity', 'long_term_assets']:
+            if metric not in new['metrics'] or new['metrics'][metric] != old['metrics'][metric]:
+                return False
+
+    for metric in new['metrics']:
+        if metric not in ['equity', 'long_term_assets']:
+            if metric not in old['metrics'] or new['metrics'][metric] != old['metrics'][metric]:
+                return False
+
+    return True
+
+
+
+def send_results(n, c):
     subject = 'Parsec Reports Organized'
 
-    msg = str(n) + ' Added'
+    msg = str(n) + ' New, ' + str(c) + ' Updated'
     email('bryches@gmail.com', subject, msg)
 
 
 
-n = save_reports_by_cik(get_reports_by_cik())
-send_results(n)
+n, c = save_reports_by_cik(get_reports_by_cik())
+send_results(n, c)
