@@ -275,7 +275,6 @@ def load_results(cik, date):
                 return results
 
         except FileNotFoundError: pass
-        #time.sleep(0.01)
 
     return False
 
@@ -288,6 +287,8 @@ def parse_quarter(year, qtr, triggers):
     s = 0 # Success
     f = 0 # Fail
 
+    reports = []
+
     for cik in index:
         if 'metrics' not in index[cik]:
             parse = multiprocessing.Process(target=parse_report, args=(cik, index[cik], triggers, year))
@@ -299,20 +300,23 @@ def parse_quarter(year, qtr, triggers):
             if report_is_valid(results):
                 index[cik]['metrics'] = results
                 index[cik]['ratios']  = get_ratios(results)
+                reports.append(cik + ' [' + index[cik]['date'] + ']')
                 s = s + 1
             else:
                 index[cik]['metrics'] = False
                 f = f + 1
 
     save_index(year, qtr, index)
-    send_results(year, qtr, s, f)
+    send_results(year, qtr, s, f, reports)
 
 
 
-def send_results(year, qtr, s, f):
+def send_results(year, qtr, s, f, reports):
     subject = 'Parsec Reports Updated'
 
-    msg = str(year) + ' Q' + str(qtr) + ': ' + str(s) + ' Successful, ' + str(f) + ' Failed'
+    msg = str(year) + ' Q' + str(qtr) + ': '
+    msg = msg + str(s) + ' Successful, ' + str(f) + ' Failed'
+    msg = msg + ', Reports: ' + ', '.join(reports)
     email('bryches@gmail.com', subject, msg)
 
 
