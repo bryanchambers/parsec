@@ -37,7 +37,7 @@ def add_special_metrics(m):
 def get_reports_by_cik():
     reports = {}
 
-    for year in range(2000, get_current_year()):
+    for year in range(2000, get_current_year() + 1):
         for qtr in range(1, 5):
             filename = 'index-' + str(year) + 'q' + str(qtr)
 
