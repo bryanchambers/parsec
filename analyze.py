@@ -1,6 +1,6 @@
-import json
-import os
+import json, os
 from datetime import datetime
+from notify   import email
 
 
 
@@ -21,7 +21,7 @@ def prep_data(reports, data_type, name, length, cutoff):
         value = report[data_type][name]
 
         data[days] = value
-    
+
     return data if len(data) > 0 else False
 
 
@@ -33,7 +33,7 @@ def avg(data, set):
     for x in data:
         s = s + x if set == 'x' else s + data[x]
         n = n + 1
-    
+
     return float(s) / n
 
 
@@ -84,7 +84,7 @@ def variance(data, x_avg):
     for x in data:
         v = x - x_avg
         s = s + v ** 2
-    
+
     return s
 
 
@@ -98,7 +98,7 @@ def sigma(data, x_avg, y_avg, set):
 
     pre_sigma = (sum((z - avg) ** 2 for z in values) / len(values))
     if pre_sigma < 0: return 1
-    
+
     sigma = pre_sigma ** 0.5
     return sigma
 
@@ -152,7 +152,7 @@ def load_reports():
 
 def get_reports_by_date(reports):
     output = []
-    
+
     for date in reports:
         dt = datetime.strptime(date, '%Y-%m-%d')
         metrics = reports[date]['metrics']
@@ -387,12 +387,21 @@ def get_value_scores():
                 total  = total + value * weight
 
                 if value == 0: fail = True
-        
+
         if not fail: out[cik] = total
 
     with open('scores/value-scores.json', 'w') as file:
         json.dump(out, file)
         file.close()
+
+    send_results(len(out))
+
+
+
+def send_results(n):
+    subject = 'Parsec Reports Analyzed'
+    message = str(n) + ' Companies Scored'
+    email('bryches@gmail.com', subject, message)
 
 
 
