@@ -79,7 +79,7 @@ def get_pe_ratios():
 
     subject = 'Parsec PE Updated'
     message = str(n) + ' Updated'
-    email('bryches@gmail.com')
+    email('bryches@gmail.com', subject, message)
 
 
 
