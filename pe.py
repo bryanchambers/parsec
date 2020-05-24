@@ -1,6 +1,7 @@
 import requests
 import datetime
 import json
+from notify import email
 
 
 
@@ -62,16 +63,24 @@ def get_pe_ratios():
     with open('info/companies.json', 'r') as file:
         companies = json.load(file)
         file.close()
-    
+
+    n = 0
     for cik in companies:
         if 'ticker' in companies[cik]:
 
             ticker = companies[cik]['ticker']
-            if ticker in pe: companies[cik]['pe'] = pe[ticker]
-    
+            if ticker in pe:
+                companies[cik]['pe'] = pe[ticker]
+                n = n + 1
+
     with open('info/companies.json', 'w') as file:
         json.dump(companies, file)
         file.close()
+
+    subject = 'Parsec PE Updated'
+    message = str(n) + ' Updated'
+    email('bryches@gmail.com')
+
 
 
 api = get_api_info()
