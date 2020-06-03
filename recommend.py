@@ -21,9 +21,9 @@ def format_result(result):
     ticker  = result['ticker']
     value   = str(round(result['value'], 1))
     pe      = str(round(result['pe'], 1))
-    #overall = str(round(result['overall'], 1))
+    overall = str(round(result['overall'], 1))
 
-    return '[' + ticker + '] ' + name + '\nValue: ' + value + ', PE: ' + pe
+    return '[' + ticker + '] ' + name + '\nOverall' + overall + ', Value: ' + value + ', PE: ' + pe
 
 
 
@@ -47,7 +47,7 @@ for cik in scores:
         result['overall'] = (result['value'] + result['pe_score']) / 2 if 'pe_score' in result else 0
         if result['overall'] > 0: results.append(result)
 
-results.sort(key=lambda x: x['value'], reverse=True)
+results.sort(key=lambda x: x['overall'], reverse=True)
 
 
 
