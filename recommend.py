@@ -4,8 +4,8 @@ from notify import email
 
 
 def get_pe_score(pe):
-    min = 1
-    max = 50
+    min = 10
+    max = 100
     rng = max - min
 
     if pe < min: pe = min
@@ -23,7 +23,7 @@ def format_result(result):
     pe      = str(round(result['pe'], 1))
     overall = str(round(result['overall'], 1))
 
-    return '[' + ticker + '] ' + name + '\nOverall' + overall + ', Value: ' + value + ', PE: ' + pe
+    return '[' + ticker + '] ' + name + '\nOverall: ' + overall + ', Value: ' + value + ', PE: ' + pe
 
 
 
@@ -44,7 +44,7 @@ for cik in scores:
         result['value'] = scores[cik]
         if 'pe' in result: result['pe_score'] = get_pe_score(result['pe'])
 
-        result['overall'] = (result['value'] + result['pe_score']) / 2 if 'pe_score' in result else 0
+        result['overall'] = (result['value'] * 0.6) + (result['pe_score'] * 0.4) if 'pe_score' in result else 0
         if result['overall'] > 0: results.append(result)
 
 results.sort(key=lambda x: x['overall'], reverse=True)
