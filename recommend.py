@@ -1,4 +1,5 @@
 import json
+from notify import email
 
 
 
@@ -15,14 +16,14 @@ def get_pe_score(pe):
 
 
 
-def print_result(result):
+def format_result(result):
     name    = result['name']
-    ticker  = result['ticker'].ljust(5)
-    value   = str(round(result['value'], 1)).rjust(5)
-    pe      = str(round(result['pe'], 1)).rjust(5)
-    overall = str(round(result['overall'], 1)).rjust(5)
+    ticker  = result['ticker']
+    value   = str(round(result['value'], 1))
+    pe      = str(round(result['pe'], 1))
+    #overall = str(round(result['overall'], 1))
 
-    print('| ' + ' | '.join([value, pe, overall, ticker, name]))
+    return '[' + ticker + '] ' + name + '\nValue: ' + value + ', PE: ' + pe
 
 
 
@@ -46,11 +47,16 @@ for cik in scores:
         result['overall'] = (result['value'] + result['pe_score']) / 2 if 'pe_score' in result else 0
         if result['overall'] > 0: results.append(result)
 
-results.sort(key=lambda x: x['overall'], reverse=True)
+results.sort(key=lambda x: x['value'], reverse=True)
 
-print('')
-print('-' * 80)
-print('| ' + ' | '.join(['Value', '   PE', 'Final', 'Tick ', 'Name']))
-print('-' * 80)
-for result in results: print_result(result)
-print('-' * 80)
+
+
+rows = []
+for result in results:
+    rows.append(format_result(result))
+
+
+
+subject = 'Parsec Recommendations'
+message = '\n\n'.join(rows)
+email('bryches@gmail.com', subject, message)
