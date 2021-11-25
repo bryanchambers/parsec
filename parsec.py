@@ -33,16 +33,14 @@ def save_index(year, qtr, index):
 
 def load_index(year, qtr):
     filename = 'index-' + str(year) + 'q' + str(qtr) + '.json'
-
-    try:
-        with open(get_path() + 'index/' + filename, 'r') as file:
-            index = json.load(file)
-            return index
-
-    except FileNotFoundError:
+    if os.path.exists(os.path.join(get_path(), 'index', filename)):
+        with open(os.path.join(get_path(), 'index', filename)) as file:
+            return json.load(file)
+    else:
         index = parse_index(get_index(year, qtr))
         save_index(year, qtr, index)
         return index
+
 
 
 
